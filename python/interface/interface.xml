@@ -1,0 +1,7 @@
+﻿<interface>
+    <window label="Main Window" width="500" height="400">
+        <text label="Welcome to the Interface" />
+        <button label="Click Me" callback="on_button_click" />
+        <input_text label="Input Field" default_value="Type here..." />
+    </window>
+</interface>
