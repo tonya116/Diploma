@@ -3,29 +3,63 @@ import math
 import os
 from dearpygui import dearpygui as dpg
 import json
-
+from model import Model
 
 def print_me(sender):
     print(f"Menu Item: {sender}")
 
 
+W, H = 800, 600
+
+model = Model()
+
+rotation_x, rotation_y = 0, 0  # Углы вращения в радианах
+
 model_data = {}
+
+
+# Обработчик для движения мыши
+is_dragging = False
+last_mouse_pos = (0, 0)
+
+
+def mouse_drag_handler(sender, app_data, user_data):
+    global is_dragging, rotation_x, rotation_y, last_mouse_pos, view
+
+    if app_data == dpg.mvMouseButton_Left:
+        is_dragging = not is_dragging  # Начало или конец перетаскивания
+        last_mouse_pos = dpg.get_mouse_pos()
+
+    current_pos = dpg.get_mouse_pos()
+    # Изменение углов на основе смещения мыши
+    dx, dy = current_pos[0] - last_mouse_pos[0], current_pos[1] - last_mouse_pos[1]
+    dx *= 0.01
+    dy *= 0.01
+
+    last_mouse_pos = current_pos
+
+    print(dx, dy)
+
+    view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
+
+    print(view)
+    # dpg.apply_transform("cube", proj * view * model_matrix)
+
+
 # Настройка интерфейса
 dpg.create_context()
-dpg.create_viewport(title="C++ & Python Calculation", width=800, height=600)
+dpg.create_viewport(title="C++ & Python Calculation", width=W, height=H)
 dpg.setup_dearpygui()
 
-x_rot = 0
-y_rot = 0
-z_rot = 0
 
 view = dpg.create_fps_matrix([0, 0, 50], 0.0, 0.0)
 proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
-model = (
-    dpg.create_rotation_matrix(math.pi * x_rot / 180.0, [1, 0, 0])
-    * dpg.create_rotation_matrix(math.pi * y_rot / 180.0, [0, 1, 0])
-    * dpg.create_rotation_matrix(math.pi * z_rot / 180.0, [0, 0, 1])
+model_matrix = (
+    dpg.create_rotation_matrix(math.radians(model.x_rot), [1, 0, 0])
+    * dpg.create_rotation_matrix(math.radians(model.y_rot), [0, 1, 0])
+    * dpg.create_rotation_matrix(math.radians(model.z_rot), [0, 0, 1])
 )
+
 
 def load_model(filename):
     with open(filename, "r", encoding="utf-8-sig") as file:
@@ -44,7 +78,6 @@ def draw_model():
             node for node in model_data["nodes"] if node["id"] == element["end_node"]
         )
 
-        # Проецируем 3D координаты на 2D
         start_2d = start_node["coordinates"]
         end_2d = end_node["coordinates"]
 
@@ -95,7 +128,7 @@ with dpg.file_dialog(
 
 
 # Основное окно
-with dpg.window(label="Build v0.0.1", tag="main_window", width=800, height=600):
+with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
 
     with dpg.viewport_menu_bar():
         with dpg.menu(label="File"):
@@ -112,7 +145,7 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=800, height=600):
 
     with dpg.tab_bar(label="tab", tag="tab_bar", show=False):
         with dpg.tab(label="Tab 1"):
-            with dpg.drawlist(width=800, height=600, tag="canvas"):
+            with dpg.drawlist(width=W, height=H, tag="canvas"):
                 with dpg.draw_layer(
                     tag="main pass",
                     depth_clipping=True,
@@ -123,9 +156,14 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=800, height=600):
                         draw_model()
 
 
-dpg.set_clip_space("main pass", 0, 0, 500, 500, -1.0, 1.0)
-dpg.apply_transform("cube", proj * view * model)
+dpg.set_clip_space("main pass", 0, 0, W, H, -1.0, 1.0)
+dpg.apply_transform("cube", proj * view * model_matrix)
 
+
+with dpg.handler_registry():
+    dpg.add_mouse_drag_handler(
+        callback=mouse_drag_handler, button=dpg.mvMouseButton_Left
+    )
 
 # dpg.start_dearpygui()
 dpg.set_primary_window("main_window", True)
@@ -133,12 +171,13 @@ dpg.show_viewport()
 
 while dpg.is_dearpygui_running():
 
-    model = (
-        dpg.create_rotation_matrix(math.pi * x_rot / 180.0, [1, 0, 0])
-        * dpg.create_rotation_matrix(math.pi * y_rot / 180.0, [0, 1, 0])
-        * dpg.create_rotation_matrix(math.pi * z_rot / 180.0, [0, 0, 1])
+    model_matrix = (
+        dpg.create_rotation_matrix(math.radians(model.x_rot), [1, 0, 0])
+        * dpg.create_rotation_matrix(math.radians(model.y_rot), [0, 1, 0])
+        * dpg.create_rotation_matrix(math.radians(model.z_rot), [0, 0, 1])
     )
-    dpg.apply_transform("cube", proj * view * model)
+
+    dpg.apply_transform("cube", proj * view * model_matrix)
 
     dpg.render_dearpygui_frame()
 
