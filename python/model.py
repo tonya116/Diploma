@@ -26,11 +26,3 @@ class Model:
 
     def rotate_z(self, angle):
         self.z_rot += angle
-
-    def update(self):
-        self.model_matrix = (
-            dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
-            * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
-            * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
-        )
-        dpg.apply_transform("cube", self.proj * self.view * self.model)
