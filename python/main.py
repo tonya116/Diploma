@@ -1,6 +1,15 @@
 ﻿import ctypes
 import os
 from dearpygui import dearpygui as dpg
+import json
+
+def load_model(filename):
+    with open(filename, 'r') as file:
+        data = json.load(file)
+    return data
+
+# Пример использования
+model_data = load_model("model.json")
 
 # Путь к скомпилированной C++ библиотеке
 lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
@@ -29,7 +38,7 @@ def on_calculate(sender, app_data, user_data):
 dpg.create_context()
 
 # Основное окно
-with dpg.window(label="Build v0.0.1", width=400, height=300):
+with dpg.window(label="Build v0.0.1", tag="main_window", width=800, height=600):
     dpg.add_text("Enter two numbers for sum:")
 
     # Поля ввода
@@ -44,6 +53,7 @@ with dpg.window(label="Build v0.0.1", width=400, height=300):
 
 dpg.create_viewport(title="C++ & Python Calculation", width=600, height=400)
 dpg.setup_dearpygui()
+dpg.set_primary_window("main_window", True)
 dpg.show_viewport()
 dpg.start_dearpygui()
 dpg.destroy_context()
