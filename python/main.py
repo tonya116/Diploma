@@ -15,21 +15,21 @@ last_mouse_pos = (0, 0)
 
 def mouse_drag_handler(sender, app_data, user_data):
     global is_dragging, rotation_x, rotation_y, last_mouse_pos, view
+    if models:
+        if app_data == dpg.mvMouseButton_Left:
+            is_dragging = not is_dragging  # Начало или конец перетаскивания
+            last_mouse_pos = dpg.get_mouse_pos()
 
-    if app_data == dpg.mvMouseButton_Left:
-        is_dragging = not is_dragging  # Начало или конец перетаскивания
-        last_mouse_pos = dpg.get_mouse_pos()
+        current_pos = dpg.get_mouse_pos()
+        # Изменение углов на основе смещения мыши
+        dx, dy = current_pos[0] - last_mouse_pos[0], current_pos[1] - last_mouse_pos[1]
+        dx *= 0.01
+        dy *= 0.01
 
-    current_pos = dpg.get_mouse_pos()
-    # Изменение углов на основе смещения мыши
-    dx, dy = current_pos[0] - last_mouse_pos[0], current_pos[1] - last_mouse_pos[1]
-    dx *= 0.01
-    dy *= 0.01
-
-    last_mouse_pos = current_pos
-
-    models[0].view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
-
+        last_mouse_pos = current_pos
+        print(models[0].view)
+        models[0].view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
+        print(models[0].view)
 
 def mouse_double_click_handler(sender, app_data, user_data):
     if models:
@@ -120,11 +120,11 @@ def create_tab():
                 perspective_divide=True,
                 cull_mode=dpg.mvCullMode_Back,
             ):
+                dpg.set_clip_space("main pass", 0, 0, W, H, -1.0, 1.0)
                 with dpg.draw_node(parent="main pass", tag="cube"):
 
                     draw_model()
 
-    dpg.set_clip_space("main pass", 0, 0, W, H, -1.0, 1.0)
     dpg.apply_transform(
         "cube", models[0].proj * models[0].view * models[0].model_matrix
     )
@@ -149,7 +149,6 @@ with dpg.handler_registry():
 
 dpg.set_primary_window("main_window", True)
 dpg.show_viewport()
-dpg.start_dearpygui()
 
 while dpg.is_dearpygui_running():
     if models:
