@@ -6,9 +6,7 @@ from model import Model
 
 W, H = 800, 600
 
-model = Model()
-model.load_model("models/model.mdl")
-model.parse_model()
+models = []
 rotation_x, rotation_y = 0, 0  # Углы вращения в радианах
 
 # Обработчик для движения мыши
@@ -30,15 +28,15 @@ def mouse_drag_handler(sender, app_data, user_data):
 
     last_mouse_pos = current_pos
 
-    view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
+    models[0].view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
 
 
 def mouse_double_click_handler(sender, app_data, user_data):
-
-    if app_data == dpg.mvMouseButton_Left:
-        for i in model.nodes:
-            pass
-            # if dpg.get_mouse_pos() == i[]
+    if models:
+        if app_data == dpg.mvMouseButton_Left:
+            for i in models[0].nodes:
+                pass
+                # if dpg.get_mouse_pos() == i[]
 
 
 # Настройка интерфейса
@@ -47,24 +45,15 @@ dpg.create_viewport(title="C++ & Python Calculation", width=W, height=H)
 dpg.setup_dearpygui()
 
 
-view = dpg.create_fps_matrix([0, 0, 50], 0.0, 0.0)
-proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
-model_matrix = (
-    dpg.create_rotation_matrix(math.radians(model.x_rot), [1, 0, 0])
-    * dpg.create_rotation_matrix(math.radians(model.y_rot), [0, 1, 0])
-    * dpg.create_rotation_matrix(math.radians(model.z_rot), [0, 0, 1])
-)
-
-
 # Функция для отрисовки модели
 def draw_model():
-    for element in model.elements:
+    for element in models[0].elements:
         # Находим начальный и конечный узлы элемента
         start_node = next(
-            node for node in model.nodes if node["id"] == element["start_node"]
+            node for node in models[0].nodes if node["id"] == element["start_node"]
         )
         end_node = next(
-            node for node in model.nodes if node["id"] == element["end_node"]
+            node for node in models[0].nodes if node["id"] == element["end_node"]
         )
 
         start_2d = start_node["coordinates"]
@@ -74,16 +63,18 @@ def draw_model():
         dpg.draw_line(p1=start_2d, p2=end_2d, color=(0, 150, 255), thickness=2)
         print(start_2d, end_2d)
     # Рисуем узлы
-    for node in model.nodes:
+    for node in models[0].nodes:
         node_2d = node["coordinates"]
         dpg.draw_circle(node_2d, 5, color=(255, 0, 0), fill=(255, 0, 0))
 
 
 def select_open_file_cb(sender, app_data, user_data):
-    print(app_data)
-    model.data = model.load_model(app_data.get("file_path_name"))
+    model = Model()
+    models.append(model)
+    model.load_model(app_data.get("file_path_name"))
+
     print(model.data)
-    dpg.show_item("tab_bar")
+    create_tab()
 
 
 # Путь к скомпилированной C++ библиотеке
@@ -112,6 +103,33 @@ def create_file_dialog():
         dpg.add_file_extension(".mdl", color=(255, 0, 255, 255), custom_text="[model]")
 
 
+def create_tab():
+
+    # Создаем уникальный идентификатор для вкладки и холста
+    tab_id = dpg.generate_uuid()
+    drawlist_id = dpg.generate_uuid()
+
+    # Добавляем новую вкладку в tab_bar
+    with dpg.tab(label=f"Tab {tab_id}", parent="tab_bar", tag=tab_id):
+        # Добавляем область для рисования (drawlist) на этой вкладке
+        with dpg.drawlist(width=W, height=H, tag=drawlist_id):
+            with dpg.draw_layer(
+                parent=drawlist_id,
+                tag="main pass",
+                depth_clipping=True,
+                perspective_divide=True,
+                cull_mode=dpg.mvCullMode_Back,
+            ):
+                with dpg.draw_node(parent="main pass", tag="cube"):
+
+                    draw_model()
+
+    dpg.set_clip_space("main pass", 0, 0, W, H, -1.0, 1.0)
+    dpg.apply_transform(
+        "cube", models[0].proj * models[0].view * models[0].model_matrix
+    )
+
+
 # Основное окно
 with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
 
@@ -119,31 +137,8 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
         with dpg.menu(label="File"):
             dpg.add_menu_item(label="Open", callback=create_file_dialog)
 
-    with dpg.tab_bar(label="tab", tag="tab_bar", show=False):
-        with dpg.tab(label="Tab 1"):
-            with dpg.drawlist(width=W, height=H, tag="canvas"):
-                with dpg.draw_layer(
-                    tag="main pass",
-                    depth_clipping=True,
-                    perspective_divide=True,
-                    cull_mode=dpg.mvCullMode_Back,
-                ):
-                    with dpg.draw_node(tag="cube"):
-                        draw_model()
-    # dpg.add_child_window(
-    #     parent="main_window",
-    #     tag="testwindow",
-    #     no_move=True,
-    #     modal=True,
-    #     no_focus_on_appearing=True,
-    #     pos=[W - 250, 0],
-    #     width=250,
-    #     height=H,
-    # )
-
-
-dpg.set_clip_space("main pass", 0, 0, W, H, -1.0, 1.0)
-dpg.apply_transform("cube", proj * view * model_matrix)
+    with dpg.tab_bar(tag="tab_bar"):
+        pass
 
 
 with dpg.handler_registry():
@@ -152,20 +147,13 @@ with dpg.handler_registry():
     )
     dpg.add_mouse_double_click_handler(callback=mouse_double_click_handler)
 
-# dpg.start_dearpygui()
 dpg.set_primary_window("main_window", True)
 dpg.show_viewport()
+dpg.start_dearpygui()
 
 while dpg.is_dearpygui_running():
-
-    model_matrix = (
-        dpg.create_rotation_matrix(math.radians(model.x_rot), [1, 0, 0])
-        * dpg.create_rotation_matrix(math.radians(model.y_rot), [0, 1, 0])
-        * dpg.create_rotation_matrix(math.radians(model.z_rot), [0, 0, 1])
-    )
-
-    dpg.apply_transform("cube", proj * view * model_matrix)
-
+    if models:
+        models[0].update()
     dpg.render_dearpygui_frame()
 
 dpg.destroy_context()
