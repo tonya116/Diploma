@@ -36,6 +36,14 @@ def mouse_drag_handler(sender, app_data, user_data):
     view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
 
 
+def mouse_double_click_handler(sender, app_data, user_data):
+
+    if app_data == dpg.mvMouseButton_Left:
+        for i in model.nodes:
+            pass
+            # if dpg.get_mouse_pos() == i[]
+
+
 # Настройка интерфейса
 dpg.create_context()
 dpg.create_viewport(title="C++ & Python Calculation", width=W, height=H)
@@ -53,13 +61,13 @@ model_matrix = (
 
 # Функция для отрисовки модели
 def draw_model():
-    for element in model.data["elements"]:
+    for element in model.elements:
         # Находим начальный и конечный узлы элемента
         start_node = next(
-            node for node in model.data["nodes"] if node["id"] == element["start_node"]
+            node for node in model.nodes if node["id"] == element["start_node"]
         )
         end_node = next(
-            node for node in model.data["nodes"] if node["id"] == element["end_node"]
+            node for node in model.nodes if node["id"] == element["end_node"]
         )
 
         start_2d = start_node["coordinates"]
@@ -67,9 +75,9 @@ def draw_model():
 
         # Рисуем линию, представляющую элемент
         dpg.draw_line(p1=start_2d, p2=end_2d, color=(0, 150, 255), thickness=2)
-
+        print(start_2d, end_2d)
     # Рисуем узлы
-    for node in model.data["nodes"]:
+    for node in model.nodes:
         node_2d = node["coordinates"]
         dpg.draw_circle(node_2d, 5, color=(255, 0, 0), fill=(255, 0, 0))
 
@@ -134,6 +142,16 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
                 ):
                     with dpg.draw_node(tag="cube"):
                         draw_model()
+    # dpg.add_child_window(
+    #     parent="main_window",
+    #     tag="testwindow",
+    #     no_move=True,
+    #     modal=True,
+    #     no_focus_on_appearing=True,
+    #     pos=[W - 250, 0],
+    #     width=250,
+    #     height=H,
+    # )
 
 
 dpg.set_clip_space("main pass", 0, 0, W, H, -1.0, 1.0)
@@ -144,6 +162,7 @@ with dpg.handler_registry():
     dpg.add_mouse_drag_handler(
         callback=mouse_drag_handler, button=dpg.mvMouseButton_Left
     )
+    dpg.add_mouse_double_click_handler(callback=mouse_double_click_handler)
 
 # dpg.start_dearpygui()
 dpg.set_primary_window("main_window", True)
