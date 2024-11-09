@@ -4,9 +4,6 @@ import os
 from dearpygui import dearpygui as dpg
 from model import Model
 
-def print_me(sender):
-    print(f"Menu Item: {sender}")
-
 W, H = 800, 600
 
 model = Model()
@@ -120,16 +117,9 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
 
     with dpg.viewport_menu_bar():
         with dpg.menu(label="File"):
-            dpg.add_menu_item(label="Save", callback=print_me)
-            dpg.add_menu_item(label="Save As", callback=print_me)
             dpg.add_menu_item(
                 label="Open", callback=lambda: dpg.show_item("file_dialog_id")
             )
-            with dpg.menu(label="Settings"):
-                dpg.add_menu_item(label="Setting 1", callback=print_me, check=True)
-                dpg.add_menu_item(label="Setting 2", callback=print_me)
-
-        dpg.add_menu_item(label="Help", callback=print_me)
 
     with dpg.tab_bar(label="tab", tag="tab_bar", show=False):
         with dpg.tab(label="Tab 1"):
