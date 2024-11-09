@@ -2,26 +2,21 @@
 import math
 import os
 from dearpygui import dearpygui as dpg
-import json
 from model import Model
 
 def print_me(sender):
     print(f"Menu Item: {sender}")
 
-
 W, H = 800, 600
 
 model = Model()
-
+model.load_model("models/model.mdl")
+model.parse_model()
 rotation_x, rotation_y = 0, 0  # Углы вращения в радианах
-
-model_data = {}
-
 
 # Обработчик для движения мыши
 is_dragging = False
 last_mouse_pos = (0, 0)
-
 
 def mouse_drag_handler(sender, app_data, user_data):
     global is_dragging, rotation_x, rotation_y, last_mouse_pos, view
@@ -38,12 +33,7 @@ def mouse_drag_handler(sender, app_data, user_data):
 
     last_mouse_pos = current_pos
 
-    print(dx, dy)
-
     view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
-
-    print(view)
-    # dpg.apply_transform("cube", proj * view * model_matrix)
 
 
 # Настройка интерфейса
@@ -61,21 +51,15 @@ model_matrix = (
 )
 
 
-def load_model(filename):
-    with open(filename, "r", encoding="utf-8-sig") as file:
-        data = json.load(file)
-    return data
-
-
 # Функция для отрисовки модели
 def draw_model():
-    for element in model_data["elements"]:
+    for element in model.data["elements"]:
         # Находим начальный и конечный узлы элемента
         start_node = next(
-            node for node in model_data["nodes"] if node["id"] == element["start_node"]
+            node for node in model.data["nodes"] if node["id"] == element["start_node"]
         )
         end_node = next(
-            node for node in model_data["nodes"] if node["id"] == element["end_node"]
+            node for node in model.data["nodes"] if node["id"] == element["end_node"]
         )
 
         start_2d = start_node["coordinates"]
@@ -85,20 +69,16 @@ def draw_model():
         dpg.draw_line(p1=start_2d, p2=end_2d, color=(0, 150, 255), thickness=2)
 
     # Рисуем узлы
-    for node in model_data["nodes"]:
+    for node in model.data["nodes"]:
         node_2d = node["coordinates"]
         dpg.draw_circle(node_2d, 5, color=(255, 0, 0), fill=(255, 0, 0))
 
 
 def select_open_file_cb(sender, app_data, user_data):
-    global model_data
     print(app_data)
-    model_data = load_model(app_data.get("file_path_name"))
-    print(model_data)
+    model.data = model.load_model(app_data.get("file_path_name"))
+    print(model.data)
     dpg.show_item("tab_bar")
-
-
-model_data = load_model("models/model.mdl")
 
 
 # Путь к скомпилированной C++ библиотеке

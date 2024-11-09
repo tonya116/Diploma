@@ -1,4 +1,5 @@
-﻿import math
+﻿import json
+import math
 
 # from dearpygui import dearpygui as dpg
 
@@ -9,14 +10,7 @@ class Model:
         self.x_rot = 0
         self.y_rot = 0
         self.z_rot = 0
-
-        # self.view = dpg.create_fps_matrix([0, 0, 50], 0.0, 0.0)
-        # self.proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
-        # self.model_matrix = (
-        #     dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
-        #     * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
-        #     * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
-        # )
+        self.data = ""
 
     def rotate_x(self, angle):
         self.x_rot += angle
@@ -26,3 +20,10 @@ class Model:
 
     def rotate_z(self, angle):
         self.z_rot += angle
+
+    def load_model(self, filename):
+        with open(filename, "r", encoding="utf-8-sig") as file:
+            self.data = json.load(file)
+
+    def parse_model(self):
+        print(self.data)
