@@ -8,6 +8,8 @@ W, H = 800, 600
 
 models = []
 rotation_x, rotation_y = 0, 0  # Углы вращения в радианах
+current_model = None
+
 
 # Обработчик для движения мыши
 is_dragging = False
@@ -27,14 +29,12 @@ def mouse_drag_handler(sender, app_data, user_data):
         dy *= 0.01
 
         last_mouse_pos = current_pos
-        print(models[0].view)
-        models[0].view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
-        print(models[0].view)
+        current_model.view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
 
 def mouse_double_click_handler(sender, app_data, user_data):
     if models:
         if app_data == dpg.mvMouseButton_Left:
-            for i in models[0].nodes:
+            for i in current_model.nodes:
                 pass
                 # if dpg.get_mouse_pos() == i[]
 
@@ -47,13 +47,13 @@ dpg.setup_dearpygui()
 
 # Функция для отрисовки модели
 def draw_model():
-    for element in models[0].elements:
+    for element in current_model.elements:
         # Находим начальный и конечный узлы элемента
         start_node = next(
-            node for node in models[0].nodes if node["id"] == element["start_node"]
+            node for node in current_model.nodes if node["id"] == element["start_node"]
         )
         end_node = next(
-            node for node in models[0].nodes if node["id"] == element["end_node"]
+            node for node in current_model.nodes if node["id"] == element["end_node"]
         )
 
         start_2d = start_node["coordinates"]
@@ -63,18 +63,26 @@ def draw_model():
         dpg.draw_line(p1=start_2d, p2=end_2d, color=(0, 150, 255), thickness=2)
         print(start_2d, end_2d)
     # Рисуем узлы
-    for node in models[0].nodes:
+    for node in current_model.nodes:
         node_2d = node["coordinates"]
         dpg.draw_circle(node_2d, 5, color=(255, 0, 0), fill=(255, 0, 0))
 
 
 def select_open_file_cb(sender, app_data, user_data):
-    model = Model()
-    models.append(model)
-    model.load_model(app_data.get("file_path_name"))
-
-    print(model.data)
+    global current_model
+    current_model = Model()
+    models.append(current_model)
+    current_model.load_model(app_data.get("file_path_name"))
+    print(current_model.data)
     create_tab()
+
+
+# Функция для проверки активного таба
+def tab_change_callback(sender, app_data, user_data):
+    global current_model
+    active_tab = app_data
+    current_model = models[active_tab // 11 - 3]
+    print(f"Active tab: {active_tab}")
 
 
 # Путь к скомпилированной C++ библиотеке
@@ -108,25 +116,28 @@ def create_tab():
     # Создаем уникальный идентификатор для вкладки и холста
     tab_id = dpg.generate_uuid()
     drawlist_id = dpg.generate_uuid()
-
+    draw_layer_id = dpg.generate_uuid()
     # Добавляем новую вкладку в tab_bar
     with dpg.tab(label=f"Tab {tab_id}", parent="tab_bar", tag=tab_id):
         # Добавляем область для рисования (drawlist) на этой вкладке
         with dpg.drawlist(width=W, height=H, tag=drawlist_id):
             with dpg.draw_layer(
                 parent=drawlist_id,
-                tag="main pass",
+                tag=draw_layer_id,
                 depth_clipping=True,
                 perspective_divide=True,
                 cull_mode=dpg.mvCullMode_Back,
             ):
-                dpg.set_clip_space("main pass", 0, 0, W, H, -1.0, 1.0)
-                with dpg.draw_node(parent="main pass", tag="cube"):
+                dpg.set_clip_space(draw_layer_id, 0, 0, W, H, -1.0, 1.0)
+                with dpg.draw_node(
+                    parent=draw_layer_id, tag=current_model.draw_node_id
+                ):
 
                     draw_model()
-
+    dpg.delete_item("file_dialog_id")
     dpg.apply_transform(
-        "cube", models[0].proj * models[0].view * models[0].model_matrix
+        current_model.draw_node_id,
+        current_model.proj * current_model.view * current_model.model_matrix,
     )
 
 
@@ -137,7 +148,7 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
         with dpg.menu(label="File"):
             dpg.add_menu_item(label="Open", callback=create_file_dialog)
 
-    with dpg.tab_bar(tag="tab_bar"):
+    with dpg.tab_bar(tag="tab_bar", callback=tab_change_callback):
         pass
 
 
@@ -151,8 +162,8 @@ dpg.set_primary_window("main_window", True)
 dpg.show_viewport()
 
 while dpg.is_dearpygui_running():
-    if models:
-        models[0].update()
+    if current_model:
+        current_model.update()
     dpg.render_dearpygui_frame()
 
 dpg.destroy_context()
