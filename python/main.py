@@ -101,15 +101,15 @@ def callback(sender, app_data, user_data):
     print("User Data: ", user_data)
 
 
-with dpg.file_dialog(
-    directory_selector=False,
-    show=False,
-    callback=select_open_file_cb,
-    id="file_dialog_id",
-    width=700,
-    height=400,
-):
-    dpg.add_file_extension(".mdl", color=(255, 0, 255, 255), custom_text="[model]")
+def create_file_dialog():
+    with dpg.file_dialog(
+        directory_selector=False,
+        callback=select_open_file_cb,
+        id="file_dialog_id",
+        width=700,
+        height=400,
+    ):
+        dpg.add_file_extension(".mdl", color=(255, 0, 255, 255), custom_text="[model]")
 
 
 # Основное окно
@@ -117,9 +117,7 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
 
     with dpg.viewport_menu_bar():
         with dpg.menu(label="File"):
-            dpg.add_menu_item(
-                label="Open", callback=lambda: dpg.show_item("file_dialog_id")
-            )
+            dpg.add_menu_item(label="Open", callback=create_file_dialog)
 
     with dpg.tab_bar(label="tab", tag="tab_bar", show=False):
         with dpg.tab(label="Tab 1"):
