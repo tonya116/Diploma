@@ -1,0 +1,67 @@
+﻿{
+    "nodes": [
+        {
+            "id": 1,
+            "coordinates": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "id": 2,
+            "coordinates": [
+                5,
+                0,
+                0
+            ]
+        },
+        {
+            "id": 3,
+            "coordinates": [
+                5,
+                5,
+                0
+            ]
+        }
+    ],
+    "elements": [
+        {
+            "id": 1,
+            "start_node": 1,
+            "end_node": 2,
+            "type": "beam",
+            "material": "steel"
+        },
+        {
+            "id": 2,
+            "start_node": 2,
+            "end_node": 3,
+            "type": "beam",
+            "material": "steel"
+        }
+    ],
+    "materials": {
+        "steel": {
+            "modulus": 210e9,
+            "density": 7800
+        }
+    },
+    "loads": [
+        {
+            "node": 2,
+            "type": "force",
+            "values": [
+                0,
+                -1000,
+                0
+            ]
+        }
+    ],
+    "boundary_conditions": [
+        {
+            "node": 1,
+            "type": "fixed"
+        }
+    ]
+}
