@@ -119,12 +119,21 @@ void Matrix::determinant(){
 
 void Matrix::inverse(){
 
-  Matrix temp = getTranspose() * (1/getDeterminant());
+  Matrix minors(_n, _m);
+  for(int i = 0; i < _m; i++){
+    for(int j = 0; j < _n; j++){
+      minors[i][j] = pow(-1, i+j) * minor(i, j).getDeterminant();
+    }
+  }
+
+  Matrix temp = minors.getTranspose() * (1/getDeterminant());
   for(int i = 0; i < _m; i++){
     for(int j = 0; j < _n; j++){
       _matrix[i][j] = temp[i][j];
     }
   }
+
+  _det = std::nan("1");
 }
 
 double Matrix::getDeterminant(){

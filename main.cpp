@@ -9,17 +9,13 @@ int main() {
 {3, 2, 1}
   };
   Matrix B = {
-{5, 2, 1}, 
-{4, 3, 2},
-{2, 1, 5}
+{5}, 
+{4},
+{2}
   };
 
-  A.logMatrix();
-  
-  std::cout << A.getDeterminant() << std::endl;
-
-  (A.getInverse()).logMatrix();
-
+  Matrix res = A.getInverse() * B;
+  res.logMatrix();
 
   return 0;
 }
