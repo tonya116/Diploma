@@ -4,7 +4,7 @@ import os
 from dearpygui import dearpygui as dpg
 from model import Model
 
-W, H = 800, 600
+W, H = 1000, 800
 
 models = []
 rotation_x, rotation_y = 0, 0  # Углы вращения в радианах
@@ -85,13 +85,26 @@ def tab_change_callback(sender, app_data, user_data):
     print(f"Active tab: {active_tab}")
 
 
-# Путь к скомпилированной C++ библиотеке
-lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
-calculations = ctypes.CDLL(lib_path)
+def calculate():
 
-# Указываем типы для C++ функции
-calculations.add.argtypes = [ctypes.c_double, ctypes.c_double]
-calculations.add.restype = ctypes.c_double
+    # Путь к скомпилированной C++ библиотеке
+    lib_path = os.path.join(
+        os.path.dirname(__file__), "../build/src/libcalculations.so"
+    )
+    calculations = ctypes.CDLL(lib_path)
+
+    calculations.print_info.argtypes = [
+        ctypes.POINTER(ctypes.c_double),
+        ctypes.c_size_t,
+    ]
+    calculations.print_info.restype = None
+
+    # Создаем массив данных
+    data = [1.1, 2.2, 3.3, 4.4, 5.5]
+    array_type = ctypes.c_double * len(data)  # Создаем тип C-Array
+    c_array = array_type(*data)  # Инициализируем массив
+
+    calculations.print_info(c_array, len(data))
 
 
 def callback(sender, app_data, user_data):
@@ -147,6 +160,9 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
     with dpg.viewport_menu_bar():
         with dpg.menu(label="File"):
             dpg.add_menu_item(label="Open", callback=create_file_dialog)
+
+        with dpg.menu(label="Calculate"):
+            dpg.add_menu_item(label="Run", callback=calculate)
 
     with dpg.tab_bar(tag="tab_bar", callback=tab_change_callback):
         pass
