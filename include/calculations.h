@@ -1,3 +1,7 @@
 ﻿#pragma once
+#include <cstdio>
+#include <cmath>
+#include "matrix.h"
+extern "C" void print_info(double arr[], size_t size);
 
-extern "C" double add(double a, double b);
+
