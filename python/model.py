@@ -1,6 +1,10 @@
 ﻿import json
 import math
 from dearpygui import dearpygui as dpg
+from force import Force
+from node import Node
+from element import Element
+
 
 class Model:
     def __init__(self):
@@ -12,7 +16,7 @@ class Model:
         self.nodes = []
         self.elements = []
         self.materials = {}
-        self.loads = []
+        self.forces = []
         self.boundary_conditions = []
 
         self.draw_node_id = dpg.generate_uuid()
@@ -40,10 +44,27 @@ class Model:
         self.__parse_model()
 
     def __parse_model(self):
-        self.nodes = self.data.get("nodes")
-        self.elements = self.data.get("elements")
-        self.materials = self.data.get("materials")
+
+        for node in self.data.get("nodes"):
+            self.nodes.append(Node(node.get("id"), node.get("coordinates")))
+
+        for element in self.data.get("elements"):
+            self.elements.append(
+                Element(
+                    element.get("id"),
+                    element.get("start_node"),
+                    element.get("end_node"),
+                    element.get("type"),
+                    element.get("material"),
+                )
+            )
+
         self.loads = self.data.get("loads")
+        for load in self.data.get("loads"):
+            if load.get("type") == "force":
+                self.forces.append(
+                    Force(self.nodes[load.get("node")].point, load.get("values"))
+                )
         self.boundary_conditions = self.data.get("boundary_conditions")
 
         print(
