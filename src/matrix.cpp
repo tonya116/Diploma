@@ -28,7 +28,7 @@ void Matrix::setIdentityMatrix() {
 
 void Matrix::logMatrix() {
 
-    int cellWidth = 5; // Ширина одной ячейки
+    int cellWidth = 10; // Ширина одной ячейки
 
     // Функция для создания границы
     auto printBorder = [&]() {
@@ -45,7 +45,7 @@ void Matrix::logMatrix() {
     // Вывод строк матрицы
     for (const auto& row : _matrix) {
         std::cout << "|";
-        for (int item : row) {
+        for (double item : row) {
             std::cout << std::setw(cellWidth) << item << "|";
         }
         std::cout << std::endl;
@@ -118,14 +118,28 @@ void Matrix::determinant(){
 }
 
 void Matrix::inverse(){
-  Matrix temp(*this);
-  temp.transpose();
-  *this = temp * (1/temp.getDeterminant());
+
+  Matrix temp = getTranspose() * (1/getDeterminant());
+  for(int i = 0; i < _m; i++){
+    for(int j = 0; j < _n; j++){
+      _matrix[i][j] = temp[i][j];
+    }
+  }
 }
 
 double Matrix::getDeterminant(){
   determinant();
   return _det;
+}
+
+Matrix Matrix::getInverse(){
+  inverse();
+  return *this;
+}
+
+Matrix Matrix::getTranspose(){
+  transpose();
+  return *this;
 }
 
 Matrix Matrix::operator*(Matrix other) {
@@ -150,7 +164,7 @@ Matrix Matrix::operator*(Matrix other) {
 
 
 Matrix Matrix::operator*(double scalar) {
-  Matrix resultMatrix;
+  Matrix resultMatrix(_n, _m);
   for (int i = 0; i < _m; i++) {
     for (int j = 0; j < _n; j++) {
       resultMatrix[i][j] = _matrix[i][j] * scalar;
@@ -158,6 +172,38 @@ Matrix Matrix::operator*(double scalar) {
   }
   return resultMatrix;
 }
+
+void Matrix::operator*=(Matrix other) {
+
+  if (_m != other._n) {
+    std::runtime_error("Cannot multply matrix with wrong dimentions");
+  }
+
+  Matrix resultMatrix(other._n, _m);
+  double sum = 0;
+  for (int i = 0; i < _m; i++) {
+    for (int j = 0; j < other._n; j++) {
+      sum = 0;
+      for (int k = 0; k < _n; k++) {
+        sum += _matrix[i][k] * other[k][j];
+      }
+      resultMatrix[i][j] = sum;
+    }
+  }
+  *this = resultMatrix;
+}
+
+
+void Matrix::operator*=(double scalar) {
+  Matrix resultMatrix(_n, _m);
+  for (int i = 0; i < _m; i++) {
+    for (int j = 0; j < _n; j++) {
+      resultMatrix[i][j] = _matrix[i][j] * scalar;
+    }
+  }
+  *this = resultMatrix;
+}
+
 
 Matrix Matrix::operator+(Matrix other) {
 
@@ -173,3 +219,5 @@ Matrix Matrix::operator+(Matrix other) {
   }
   return resultMatrix;
 }
+
+std::vector<double> &Matrix::operator[](int index) { return _matrix[index]; }

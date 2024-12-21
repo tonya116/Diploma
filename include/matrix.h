@@ -14,7 +14,6 @@ public:
   Matrix(int n, int m);
   Matrix(std::initializer_list<std::initializer_list<double>> init);
 
-  void setIdentityMatrix();
   void logMatrix();
   bool dimEqual(Matrix other);
   void transpose();
@@ -23,9 +22,18 @@ public:
   Matrix minor(int r, int c);
 
   double getDeterminant();
+  Matrix getTranspose();
+  Matrix getInverse();
+
+
+
+  void setIdentityMatrix();
 
   Matrix operator*(Matrix other);
+  void operator*=(Matrix other);
+
   Matrix operator*(double scalar);
+  void operator*=(double other);
 
   Matrix operator+(Matrix other);
 

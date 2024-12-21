@@ -1,4 +1,4 @@
-﻿#include "include/calculations.h"
+﻿#include "matrix.h"
 #include <iostream>
 
 int main() {
@@ -16,17 +16,10 @@ int main() {
 
   A.logMatrix();
   
-  // std::cout << A.getDeterminant() << std::endl;
+  std::cout << A.getDeterminant() << std::endl;
 
+  (A.getInverse()).logMatrix();
 
-  // B.inverse();
-  // B.logMatrix();
-  // A.logMatrix();
-  // B.logMatrix();
-  // Matrix res = A * B;
-  // res.logMatrix();
-
-  // (A + B).logMatrix();
 
   return 0;
 }

@@ -9,4 +9,3 @@ void print_info(double arr[], size_t size) {
 }
 
 
-std::vector<double> &Matrix::operator[](int index) { return _matrix[index]; }
