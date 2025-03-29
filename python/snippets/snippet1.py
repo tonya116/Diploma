@@ -5,7 +5,7 @@ dpg.create_context()
 dpg.create_viewport()
 dpg.setup_dearpygui()
 
-size = 5
+size = 1
 verticies = [
     [-size, -size, -size],  # 0 near side
     [size, -size, -size],  # 1
@@ -56,7 +56,7 @@ with dpg.window(label="tutorial", width=550, height=550):
             tag="main pass",
             depth_clipping=True,
             perspective_divide=True,
-            cull_mode=dpg.mvCullMode_Back,
+            cull_mode=dpg.mvCullMode_None,
         ):
 
             with dpg.draw_node(tag="cube"):
@@ -151,14 +151,15 @@ y_rot = 45
 z_rot = 0
 
 view = dpg.create_fps_matrix([0, 0, 50], 0.0, 0.0)
-proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
+# proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.01, 100)
+proj = dpg.create_orthographic_matrix(-2, 2, -2, 2, -5, 5)
 model = (
     dpg.create_rotation_matrix(math.pi * x_rot / 180.0, [1, 0, 0])
     * dpg.create_rotation_matrix(math.pi * y_rot / 180.0, [0, 1, 0])
     * dpg.create_rotation_matrix(math.pi * z_rot / 180.0, [0, 0, 1])
 )
 
-dpg.set_clip_space("main pass", 0, 0, 500, 500, -1.0, 1.0)
+dpg.set_clip_space("main pass", 0, 500, 0, 500, -1.0, 1.0)
 dpg.apply_transform("cube", proj * view * model)
 
 dpg.show_viewport()
