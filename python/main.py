@@ -1,6 +1,6 @@
 ﻿import ctypes
-import math
 import os
+
 from dearpygui import dearpygui as dpg
 from model import Model
 
@@ -9,7 +9,6 @@ W, H = 1000, 800
 models = []
 rotation_x, rotation_y = 0, 0  # Углы вращения в радианах
 current_model = None
-
 
 # Обработчик для движения мыши
 is_dragging = False
@@ -49,15 +48,11 @@ dpg.setup_dearpygui()
 def draw_model():
     for element in current_model.elements:
         # Находим начальный и конечный узлы элемента
-        start_node = next(
-            node for node in current_model.nodes if node["id"] == element["start_node"]
-        )
-        end_node = next(
-            node for node in current_model.nodes if node["id"] == element["end_node"]
-        )
+        start_node = next(node for node in current_model.nodes if node.id == element.start_node)
+        end_node = next(node for node in current_model.nodes if node.id == element.end_node)
 
-        start_2d = start_node["coordinates"]
-        end_2d = end_node["coordinates"]
+        start_2d = start_node.coordinates
+        end_2d = end_node.coordinates
 
         # Рисуем линию, представляющую элемент
         dpg.draw_line(p1=start_2d, p2=end_2d, color=(0, 150, 255), thickness=2)
@@ -88,30 +83,25 @@ def tab_change_callback(sender, app_data, user_data):
 def calculate():
 
     # Путь к скомпилированной C++ библиотеке
-    lib_path = os.path.join(
-        os.path.dirname(__file__), "../build/src/libcalculations.so"
-    )
+    lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
     calculations = ctypes.CDLL(lib_path)
 
-    calculations.print_info.argtypes = [
-        ctypes.POINTER(ctypes.c_double),
-        ctypes.c_size_t,
-    ]
-    calculations.print_info.restype = None
+    calculations.createMatrix.argtypes = [ctypes.c_int, ctypes.c_int]
+    calculations.createMatrix.restype = ctypes.c_void_p
 
+    calculations.destroyMatrix.argtypes = [ctypes.c_void_p]
+
+    calculations.getDeterminant.argtypes = [ctypes.c_void_p]
+
+    mat = calculations.createMatrix(5, 5)
+    print(mat)
     # Создаем массив данных
-    data = [1.1, 2.2, 3.3, 4.4, 5.5]
-    array_type = ctypes.c_double * len(data)  # Создаем тип C-Array
-    c_array = array_type(*data)  # Инициализируем массив
-
-    calculations.print_info(c_array, len(data))
 
 
 def callback(sender, app_data, user_data):
     print("Sender: ", sender)
     print("App Data: ", app_data)
     print("User Data: ", user_data)
-
 
 def create_file_dialog():
     with dpg.file_dialog(
@@ -122,7 +112,6 @@ def create_file_dialog():
         height=400,
     ):
         dpg.add_file_extension(".mdl", color=(255, 0, 255, 255), custom_text="[model]")
-
 
 def create_tab():
 
@@ -142,9 +131,7 @@ def create_tab():
                 cull_mode=dpg.mvCullMode_Back,
             ):
                 dpg.set_clip_space(draw_layer_id, 0, 0, W, H, -1.0, 1.0)
-                with dpg.draw_node(
-                    parent=draw_layer_id, tag=current_model.draw_node_id
-                ):
+                with dpg.draw_node(parent=draw_layer_id, tag=current_model.draw_node_id):
 
                     draw_model()
     dpg.delete_item("file_dialog_id")
@@ -152,7 +139,6 @@ def create_tab():
         current_model.draw_node_id,
         current_model.proj * current_model.view * current_model.model_matrix,
     )
-
 
 # Основное окно
 with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
@@ -165,13 +151,11 @@ with dpg.window(label="Build v0.0.1", tag="main_window", width=W, height=H):
             dpg.add_menu_item(label="Run", callback=calculate)
 
     with dpg.tab_bar(tag="tab_bar", callback=tab_change_callback):
-        pass
+        dpg.add_tab(label="lol")
 
 
 with dpg.handler_registry():
-    dpg.add_mouse_drag_handler(
-        callback=mouse_drag_handler, button=dpg.mvMouseButton_Left
-    )
+    dpg.add_mouse_drag_handler(callback=mouse_drag_handler, button=dpg.mvMouseButton_Left)
     dpg.add_mouse_double_click_handler(callback=mouse_double_click_handler)
 
 dpg.set_primary_window("main_window", True)
