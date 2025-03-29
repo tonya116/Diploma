@@ -22,7 +22,15 @@ class Model:
         self.draw_node_id = dpg.generate_uuid()
 
         self.view = dpg.create_fps_matrix([0, 0, 50], 0.0, 0.0)
-        self.proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
+        N = 40
+        a = -N
+        b = N
+        c = -N
+        d = N
+        e = -N*5
+        f = N*5
+        self.proj = dpg.create_orthographic_matrix(a, b, c, d, e, f)
+        # self.proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
         self.model_matrix = (
             dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
             * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
