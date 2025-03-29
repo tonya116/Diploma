@@ -22,8 +22,8 @@ class Model:
         self.draw_node_id = dpg.generate_uuid()
 
         self.view = dpg.create_fps_matrix([0, 0, 50], 0.0, 0.0)
-
-        self.proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
+        # self.proj = dpg.create_orthographic_matrix(0, 500, 500, 0, 0.1, 100)
+        self.proj = dpg.create_perspective_matrix(math.pi * 1.0 / 180.0, 1.0, 0.1, 100)
         self.model_matrix = (
             dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
             * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
@@ -84,6 +84,6 @@ class Model:
             * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
         )
 
-        dpg.apply_transform(
-            self.draw_node_id, self.proj * self.view * self.model_matrix
-        )
+        # dpg.apply_transform(
+        #     self.draw_node_id, self.proj * self.view * self.model_matrix
+        # )
