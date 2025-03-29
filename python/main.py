@@ -22,6 +22,8 @@ class Window:
         
         self.current_model: Model = None
         
+        self.isDragging = False
+        
         # Настройка интерфейса
         dpg.create_context()
         dpg.create_viewport(title="C++ & Python Calculation", width=W, height=H)
@@ -29,30 +31,21 @@ class Window:
 
 
     def mouse_drag_handler(self, sender, app_data, user_data):
-        pass
-        # global is_dragging, rotation_x, rotation_y, last_mouse_pos, view
-        # if models:
-        #     if app_data == dpg.mvMouseButton_Left:
-        #         is_dragging = not is_dragging  # Начало или конец перетаскивания
-        #         last_mouse_pos = dpg.get_mouse_pos()
-
-        #     current_pos = dpg.get_mouse_pos()
-        #     # Изменение углов на основе смещения мыши
-        #     dx, dy = current_pos[0] - last_mouse_pos[0], current_pos[1] - last_mouse_pos[1]
-        #     dx *= 0.01
-        #     dy *= 0.01
-
-        #     last_mouse_pos = current_pos
-        #     self.current_model.view *= dpg.create_fps_matrix([0, 0, 0], dy, dx)
+        
+        if self.current_model:
+            
+            dx, dy = dpg.get_mouse_drag_delta()
+            self.current_model.rotate_x(dx/100)
+            self.current_model.rotate_y(dy/100)
+            
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
-        pass
-        # if models:
-        #     if app_data == dpg.mvMouseButton_Left:
-        #         for i in self.current_model.nodes:
-        #             pass
-        #             # if dpg.get_mouse_pos() == i[]
-
+        
+        if self.current_model:
+            if app_data == dpg.mvMouseButton_Left:
+                for i in self.current_model.nodes:
+                    pass
+                    # if dpg.get_mouse_pos() == i[]
 
     # Функция для отрисовки модели
     def draw_model(self):
@@ -122,22 +115,25 @@ class Window:
         with dpg.tab(label=model_name, parent="tab_bar", tag=tab_id):
             # Добавляем область для рисования (drawlist) на этой вкладке
             with dpg.drawlist(width=W, height=H, tag=drawlist_id):
-                # with dpg.draw_layer(
-                #     parent=drawlist_id,
-                #     tag=draw_layer_id,
-                #     depth_clipping=True,
-                #     perspective_divide=True,
-                #     cull_mode=dpg.mvCullMode_Back,
-                # ):
-                    # dpg.set_clip_space(draw_layer_id, 0, 0, W, H, -1.0, 1.0)
-                    # with dpg.draw_node(parent=draw_layer_id, tag=self.current_model.draw_node_id):
+                with dpg.draw_layer(
+                    parent=drawlist_id,
+                    tag=draw_layer_id,
+                    depth_clipping=True,
+                    perspective_divide=True,
+                    cull_mode=dpg.mvCullMode_Back,
+                ):
+                    # Важно учесть аспект, я использую H, H, чтобы отрисовывать квадрат
+                    dpg.set_clip_space(draw_layer_id, 0, 0, H, H, -100.0, 100.0)
+                    with dpg.draw_node(parent=draw_layer_id, tag=self.current_model.draw_node_id):
 
                         self.draw_model()
+                        
+                        
         dpg.delete_item("file_dialog_id")
-        # dpg.apply_transform(
-        #     self.current_model.draw_node_id,
-        #     self.current_model.proj * self.current_model.view * self.current_model.model_matrix,
-        # )
+        dpg.apply_transform(
+            self.current_model.draw_node_id,
+            self.current_model.model_matrix,
+        )
 
     def run(self):
         # Основное окно
@@ -148,7 +144,6 @@ class Window:
 
                 with dpg.menu(label="Calculate"):
                     dpg.add_menu_item(label="Run", callback=self.calculate)
-                    
                     
             with dpg.group(horizontal=True):
 
@@ -161,16 +156,12 @@ class Window:
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
                         pass
                     
-                    # with dpg.drawlist(width=600, height=H - 100, tag="canvas"):
-                    #     dpg.set_item_callback("canvas", self.callback)
-
                 # Правый блок — Инспектор
                 with dpg.child_window(width=300, height=H):
                     dpg.add_text("Inspector")
                     dpg.add_text("Selected Node:", tag="node_id_text")
                     dpg.add_input_int(label="X", tag="x_coord", callback=self.callback)
                     dpg.add_input_int(label="Y", tag="y_coord", callback=self.callback)
-
 
         with dpg.handler_registry():
             dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
