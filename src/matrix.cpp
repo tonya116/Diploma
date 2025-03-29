@@ -230,3 +230,12 @@ Matrix Matrix::operator+(Matrix other) {
 }
 
 std::vector<double> &Matrix::operator[](int index) { return _matrix[index]; }
+
+Matrix &Matrix::operator+=(Matrix other) {
+  for (int i = 0; i < _m; i++) {
+    for (int j = 0; j < other._n; j++) {
+      _matrix[i][j] += other[i][j];
+    }
+  }
+  return *this;
+}

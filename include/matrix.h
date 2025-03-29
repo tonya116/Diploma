@@ -3,7 +3,7 @@
 #include <vector>
 #include <cmath>
 
- class Matrix {
+class Matrix {
 public:
   int _n, _m;
   double _det = std::nan("1");
@@ -25,8 +25,6 @@ public:
   Matrix getTranspose();
   Matrix getInverse();
 
-
-
   void setIdentityMatrix();
 
   Matrix operator*(Matrix other);
@@ -38,4 +36,5 @@ public:
   Matrix operator+(Matrix other);
 
   std::vector<double> &operator[](int index);
+  Matrix &operator+=(Matrix other);
 };
