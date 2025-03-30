@@ -5,13 +5,15 @@ from force import Force
 from node import Node
 from element import Element
 
-
 class Model:
     def __init__(self):
 
         self.x_rot = 0
         self.y_rot = 0
         self.z_rot = 0
+        
+        self.scale = 1
+        
         self.data = ""
         self.nodes = []
         self.elements = []
@@ -19,22 +21,17 @@ class Model:
         self.forces = []
         self.boundary_conditions = []
 
+        self.name = None
+        
         self.draw_node_id = dpg.generate_uuid()
 
-        self.view = dpg.create_fps_matrix([0, 0, 50], 0.0, 0.0)
-        N = 40
-        a = -N
-        b = N
-        c = -N
-        d = N
-        e = -N*5
-        f = N*5
-        self.proj = dpg.create_orthographic_matrix(a, b, c, d, e, f)
-        # self.proj = dpg.create_perspective_matrix(math.pi * 45.0 / 180.0, 1.0, 0.1, 100)
         self.model_matrix = (
-            dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
+            
+            dpg.create_translation_matrix([1900//2, 900//2])
+            * dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
             * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
             * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
+            * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
         )
 
     def rotate_x(self, angle):
@@ -46,12 +43,14 @@ class Model:
     def rotate_z(self, angle):
         self.z_rot += angle
 
-    def load_model(self, filename):
+    def load_model(self, filename:str):
+        self.name = filename.split("/")[-1][:-4]
         with open(filename, "r", encoding="utf-8-sig") as file:
             self.data = json.load(file)
         self.__parse_model()
 
     def __parse_model(self):
+        # TODO Надо бы переписать передачу имени файла
 
         for node in self.data.get("nodes"):
             self.nodes.append(Node(node.get("id"), node.get("coordinates")))
@@ -86,11 +85,23 @@ class Model:
 
     def update(self):
         self.model_matrix = (
-            dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
+            
+            dpg.create_translation_matrix([1900//2, 900//2])
+            * dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
             * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
             * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
+            * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
+        )
+        dpg.apply_transform(
+            self.draw_node_id,  self.model_matrix
         )
 
-        dpg.apply_transform(
-            self.draw_node_id, self.proj * self.view * self.model_matrix
-        )
+
+    def get_model_matrix(self):
+        return self.model_matrix
+    
+    def set_scale(self, scale:float):
+        self.scale = scale
+        
+    def get_scale(self):
+        return self.scale
