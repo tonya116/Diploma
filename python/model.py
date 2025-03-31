@@ -1,12 +1,27 @@
 ﻿import json
 import math
+import os
 from dearpygui import dearpygui as dpg
 from force import Force
 from node import Node
 from element import Element
 
+import configparser
+
+# Создаём парсер
+config = configparser.ConfigParser()
+
+# Читаем файл
+config.read(os.getcwd() + "/python/config.ini")
+
+def setting(key):
+    return config['DEFAULT'].get(key)
+
 class Model:
     def __init__(self):
+
+        self.x = 0
+        self.y = 0
 
         self.x_rot = 0
         self.y_rot = 0
@@ -25,14 +40,14 @@ class Model:
         
         self.draw_node_id = dpg.generate_uuid()
 
-        self.model_matrix = (
-            
-            dpg.create_translation_matrix([1900//2, 900//2])
-            * dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
-            * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
-            * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
-            * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
-        )
+        self.proj = dpg.create_orthographic_matrix(0, 1, 0, 1, 0, 1)
+
+    def set_pos(self, point):
+        self.x = point[0]
+        self.y = point[1]
+
+    def get_pos(self):
+        return [self.x, self.y]
 
     def rotate_x(self, angle):
         self.x_rot += angle
@@ -44,13 +59,15 @@ class Model:
         self.z_rot += angle
 
     def load_model(self, filename:str):
+        
+        # TODO Надо бы переписать передачу имени файла
+
         self.name = filename.split("/")[-1][:-4]
         with open(filename, "r", encoding="utf-8-sig") as file:
             self.data = json.load(file)
         self.__parse_model()
 
     def __parse_model(self):
-        # TODO Надо бы переписать передачу имени файла
 
         for node in self.data.get("nodes"):
             self.nodes.append(Node(node.get("id"), node.get("coordinates")))
@@ -86,16 +103,15 @@ class Model:
     def update(self):
         self.model_matrix = (
             
-            dpg.create_translation_matrix([1900//2, 900//2])
+            dpg.create_translation_matrix([self.x, self.y])
             * dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
             * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
             * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
             * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
         )
         dpg.apply_transform(
-            self.draw_node_id,  self.model_matrix
+            self.draw_node_id, self.proj * self.model_matrix
         )
-
 
     def get_model_matrix(self):
         return self.model_matrix
