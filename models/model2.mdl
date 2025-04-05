@@ -75,6 +75,16 @@
                 0,
                 0
             ]
+        },
+        {
+            "element": 1,
+            "type": "momentum",
+            "offset": 2,
+            "momentum": [
+                10,
+                0,
+                0
+            ]
         }
     ],
     "supports": [
