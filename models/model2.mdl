@@ -23,6 +23,14 @@
                 5,
                 0
             ]
+        },
+        {
+            "id": 4,
+            "coordinates": [
+                5,
+                2,
+                0
+            ]
         }
     ],
     "elements": [
@@ -51,9 +59,20 @@
         {
             "node": 2,
             "type": "force",
-            "values": [
+            "direction": [
                 0,
                 10,
+                0
+            ]
+        },
+        {
+            "element": 2,
+            "type": "distributed_force",
+            "offset": 2,
+            "lenght": 3,
+            "direction": [
+                10,
+                0,
                 0
             ]
         }
