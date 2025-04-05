@@ -2,9 +2,9 @@
 import math
 import os
 from dearpygui import dearpygui as dpg
-from force import Force
-from node import Node
-from element import Element
+from python.Entities.force import Force
+from python.Entities.node import Node
+from python.Entities.element import Element
 
 import configparser
 

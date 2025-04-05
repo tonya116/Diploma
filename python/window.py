@@ -128,12 +128,11 @@ class Window:
             # print(model_matrix)
             model_matrix = (
             # dpg.create_lookat_matrix([1, 0, 0], [1, 0, 0.1], [0, 1, 0])
-             dpg.create_translation_matrix([self.current_model.x+100000, self.current_model.y])
+            dpg.create_translation_matrix([self.current_model.x+100000, self.current_model.y])
             * dpg.create_rotation_matrix(math.radians(self.current_model.x_rot), [1, 0, 0])
             * dpg.create_rotation_matrix(math.radians(self.current_model.y_rot), [0, 1, 0])
             * dpg.create_rotation_matrix(math.radians(self.current_model.z_rot), [0, 0, 1])
             * dpg.create_scale_matrix([self.current_model.scale, self.current_model.scale, self.current_model.scale]) 
-        
         
         )
             transform = model_matrix#  * dpg.create_rotation_matrix(3.1415/2, [0, 1, 0])
@@ -183,10 +182,8 @@ class Window:
                     closest_node = node
             
             if closest_node:
-                print(f"Hit node id: {closest_node.id}")
                 return closest_node.id
             else:
-                print("Miss")
                 return None
         
     def mouse_wheel_handler(self, sender, app_data, user_data):
@@ -210,11 +207,14 @@ class Window:
         for node in self.current_model.nodes:
             dpg.draw_circle(node.point, 5, color=eval(setting("NodeColor")), fill=eval(setting("NodeColor")))
 
+        for force in self.current_model.forces:
+            print(force)
+            # dpg.draw_arrow(force.point, )
+
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
         self.current_model.load_model(app_data.get("file_path_name"))
         self.models.update({self.current_model.name: self.current_model})
-        print(self.current_model.data)
         self.create_tab(self.current_model.name)
 
     # Функция для проверки активного таба
