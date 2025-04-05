@@ -12,5 +12,12 @@ class Vector:
         tmp.z += other.z
         return tmp
     
+    def __mul__(self, scalar):
+        tmp = Vector(self.x, self.y, self.z)
+        tmp.x *= scalar
+        tmp.y *= scalar
+        tmp.z *= scalar
+        return tmp
+    
     def asList(self):
         return [self.x, self.y, self.z]
