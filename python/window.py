@@ -6,6 +6,9 @@ from dearpygui import dearpygui as dpg
 from model import Model
 import configparser
 import numpy as np
+from Geometry.Circle import Circle
+from Geometry.Line import Line
+from Geometry.Arrow import Arrow
 
 def invert_matrix(mat):
     """Инвертирование 4x4 матрицы, представленной как flat list"""
@@ -197,20 +200,19 @@ class Window:
             return
         
         self.current_model.update()
+        drawables = [self.current_model.nodes, self.current_model.elements, self.current_model.supports, self.current_model.forces]
         
-        for element in self.current_model.elements:
-            start_node = next(node for node in self.current_model.nodes if node.id == element.start_node)
-            end_node = next(node for node in self.current_model.nodes if node.id == element.end_node)
+        for drawable in drawables:
+            for object in drawable:
+                for prim in object.geometry():
+                    if isinstance(prim, Circle):
+                        dpg.draw_circle(prim.center, radius=prim.radius, color=prim.color, thickness=prim.thickness)
+                    elif isinstance(prim, Line):
+                        dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
+                    elif isinstance(prim, Arrow):
+                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
 
-            dpg.draw_line(p1=start_node.point, p2=end_node.point, color=eval(setting("LineColor")), thickness=2)
-
-        for node in self.current_model.nodes:
-            dpg.draw_circle(node.point, 5, color=eval(setting("NodeColor")), fill=eval(setting("NodeColor")))
-
-        for force in self.current_model.forces:
-            print(force)
-            dpg.draw_arrow(force.point.asList(), (force.point+force.direction).asList(), color=eval(setting("ForceColor")), thickness=2)
-
+                
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
         self.current_model.load_model(app_data.get("file_path_name"))
