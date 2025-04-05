@@ -9,6 +9,7 @@ import numpy as np
 from Geometry.Circle import Circle
 from Geometry.Line import Line
 from Geometry.Arrow import Arrow
+from Geometry.QBezier import QBezier
 
 def invert_matrix(mat):
     """Инвертирование 4x4 матрицы, представленной как flat list"""
@@ -200,7 +201,7 @@ class Window:
             return
         
         self.current_model.update()
-        drawables = [self.current_model.nodes, self.current_model.elements, self.current_model.supports, self.current_model.forces, self.current_model.distributed_forces]
+        drawables = [self.current_model.elements, self.current_model.nodes, self.current_model.supports, self.current_model.forces, self.current_model.distributed_forces]
         
         for drawable in drawables:
             for object in drawable:
@@ -211,7 +212,9 @@ class Window:
                         dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
                     elif isinstance(prim, Arrow):
                         dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
-
+                    elif isinstance(prim, QBezier):
+                        dpg.draw_bezier_quadratic(prim.p1, prim.p2, prim.p3, color=prim.color, thickness=prim.thickness)
+                        
                 
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
@@ -274,8 +277,6 @@ class Window:
         dpg.delete_item("file_dialog_id")
 
     def setup(self):
-        
-        
         # Основное окно
         with dpg.window(label="Build v0.0.4", tag="main_window", width=W, height=H):
             with dpg.menu_bar():

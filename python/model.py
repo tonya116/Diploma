@@ -8,6 +8,7 @@ from Entities.distributed_force import DistributedForce
 from Entities.node import Node
 from Entities.element import Element
 from Entities.fixed import Fixed
+from Entities.momentum import Momentum
 
 from Geometry.Vector import Vector
 from Geometry.Point import Point
@@ -100,6 +101,9 @@ class Model:
                 )
             elif load.get("type") == "distributed_force":
                 self.distributed_forces.append(DistributedForce(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("direction")), load.get("lenght")))
+                
+            elif load.get("type") == "momentum":
+                self.distributed_forces.append(Momentum(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("momentum"))))
                 
         for support in self.data.get("supports"):
             
