@@ -5,6 +5,7 @@ from dearpygui import dearpygui as dpg
 from Entities.force import Force
 from Entities.node import Node
 from Entities.element import Element
+from Entities.fixed import Fixed
 
 from Geometry.Vector import Vector
 from Geometry.Point import Point
@@ -38,7 +39,7 @@ class Model:
         self.elements = []
         self.materials = {}
         self.forces = []
-        self.boundary_conditions = []
+        self.supports = []
 
         self.name = None
         
@@ -74,14 +75,14 @@ class Model:
     def __parse_model(self):
 
         for node in self.data.get("nodes"):
-            self.nodes.append(Node(node.get("id"), node.get("coordinates")))
+            self.nodes.append(Node(node.get("id"), Point(*node.get("coordinates"))))
 
         for element in self.data.get("elements"):
             self.elements.append(
                 Element(
                     element.get("id"),
-                    element.get("start_node"),
-                    element.get("end_node"),
+                    self.nodes[element.get("start_node")-1],
+                    self.nodes[element.get("end_node")-1],
                     element.get("type"),
                     element.get("material"),
                 )
@@ -92,16 +93,18 @@ class Model:
             if load.get("type") == "force":
             
                 self.forces.append(
-                    Force(Point(*self.nodes[load.get("node")].point), Vector(*load.get("values")))
+                    Force(self.nodes[load.get("node")].point, Vector(*load.get("values")))
                 )
-        self.boundary_conditions = self.data.get("boundary_conditions")
-
+                
+        for support in self.data.get("supports"):
+            
+            self.supports.append(Fixed(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
+            
         print(
             self.nodes,
             self.elements,
             self.materials,
             self.loads,
-            self.boundary_conditions,
             sep="\n",
         )
 
