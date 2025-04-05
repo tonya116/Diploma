@@ -53,15 +53,17 @@
             "type": "force",
             "values": [
                 0,
-                -1000,
+                10,
                 0
             ]
         }
     ],
-    "boundary_conditions": [
+    "supports": [
         {
-            "node": 1,
-            "type": "fixed"
+            "id": 1,
+            "node": 3,
+            "type": "fixed",
+            "direction": [1, 0, 0]
         }
     ]
 }
