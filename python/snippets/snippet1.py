@@ -1,77 +1,31 @@
-﻿import dearpygui.dearpygui as dpg
-import math
+﻿# from scipy.sparse.linalg import spsolve
+# from scipy.sparse import coo_matrix
+import numpy as np
+# Дано: балка длиной 6 м, нагрузка P = 20 кН в середине
+L = 6.0
+P = 20.0
+EI = 1000
 
-dpg.create_context()
-dpg.create_viewport()
-dpg.setup_dearpygui()
+# Разбиваем на 2 элемента по 3 м
+nodes = [0, 3, 6]
+elem = [(0, 1), (1, 2)]
 
-with dpg.window(label="tutorial", width=550, height=550):
+# Матрица жесткости для балки (2D: вертикальное смещение + угол)
+K_local = EI / (3**3) * np.array([
+    [12, 6*3, -12, 6*3],
+    [6*3, 4*3**2, -6*3, 2*3**2],
+    [-12, -6*3, 12, -6*3],
+    [6*3, 2*3**2, -6*3, 4*3**2]
+])
 
-    with dpg.drawlist(width=500, height=500):
+# Сборка глобальной матрицы (здесь упрощенно)
+K_global = np.zeros((4, 4))
+K_global[:2, :2] += K_local[:2, :2]
+K_global[2:, 2:] += K_local[2:, 2:]
 
-        with dpg.draw_node(tag="root node"):
-            dpg.draw_circle([0, 0], 150, color=[0, 255, 0])                      # inner planet orbit
-            dpg.draw_circle([0, 0], 200, color=[0, 255, 255])                    # outer planet orbit
-            dpg.draw_circle([0, 0], 15, color=[255, 255, 0], fill=[255, 255, 0]) # sun
+# Вектор нагрузки (сила P в середине)
+F = np.array([0, 0, -P, 0])
 
-            with dpg.draw_node(tag="planet node 1"):
-                dpg.draw_circle([0, 0], 10, color=[0, 255, 0], fill=[0, 255, 0]) # inner planet
-                dpg.draw_circle([0, 0], 25, color=[255, 0, 255])                 # moon orbit path
-
-                with dpg.draw_node(tag="planet 1, moon node"):
-                    dpg.draw_circle([0, 0], 5, color=[255, 0, 255], fill=[255, 0, 255]) # moon
-
-            with dpg.draw_node(tag="planet node 2"):
-                dpg.draw_circle([0, 0], 10, color=[0, 255, 255], fill=[0, 255, 255]) # outer planet
-                dpg.draw_circle([0, 0], 25, color=[255, 0, 255])                     # moon 1 orbit path
-                dpg.draw_circle([0, 0], 45, color=[255, 255, 255])                   # moon 2 orbit path
-
-                with dpg.draw_node(tag="planet 2, moon 1 node"):
-                    dpg.draw_circle([0, 0], 5, color=[255, 0, 255], fill=[255, 0, 255]) # moon 1
-
-                with dpg.draw_node(tag="planet 2, moon 2 node"):
-                    dpg.draw_circle([0, 0], 5, color=[255, 255, 255], fill=[255, 255, 255]) # moon 2
-
-planet1_distance = 150
-planet1_angle = 45.0
-planet1_moondistance = 25
-planet1_moonangle = 45
-
-planet2_distance = 200
-planet2_angle = 0.0
-planet2_moon1distance = 25
-planet2_moon1angle = 45
-planet2_moon2distance = 45
-planet2_moon2angle = 120
-
-dpg.apply_transform("root node", dpg.create_translation_matrix([250, 250]))
-
-dpg.apply_transform("planet node 1", dpg.create_rotation_matrix(math.pi*planet1_angle/180.0 , [0, 0, -1])*dpg.create_translation_matrix([planet1_distance, 0]))
-
-dpg.apply_transform("planet 1, moon node", dpg.create_rotation_matrix(math.pi*planet1_moonangle/180.0 , [0, 0, -1])*dpg.create_translation_matrix([planet1_moondistance, 0]))
-
-dpg.apply_transform("planet node 2", dpg.create_rotation_matrix(math.pi*planet2_angle/180.0 , [0, 0, -1])*dpg.create_translation_matrix([planet2_distance, 0]))
-dpg.apply_transform("planet 2, moon 1 node", dpg.create_rotation_matrix(math.pi*planet2_moon1distance/180.0 , [0, 0, -1])*dpg.create_translation_matrix([planet2_moon1distance, 0]))
-dpg.apply_transform("planet 2, moon 2 node", dpg.create_rotation_matrix(math.pi*planet2_moon2angle/180.0 , [0, 0, -1])*dpg.create_translation_matrix([planet2_moon2distance, 0]))
-
-dpg.show_viewport()
-while dpg.is_dearpygui_running():
-    planet1_angle += 3
-
-    dpg.apply_transform("root node", dpg.create_translation_matrix([250, 250]))
-
-    model_matrix = (
-            # dpg.create_rotation_matrix(math.radians(planet1_angle), [1, 0, 0])
-            # dpg.create_rotation_matrix(math.radians(planet1_angle), [0, 1, 0])
-            # * dpg.create_rotation_matrix(math.radians(planet1_angle), [0, 0, 1])
-            dpg.create_translation_matrix([0, 0, 100]) * dpg.create_rotation_matrix(math.radians(planet1_angle), [0, 1, 0])
-        )
-    
-    
-    dpg.apply_transform("planet node 1", model_matrix)
-    # dpg.apply_transform("planet node 1", dpg.create_rotation_matrix(math.radians(planet1_angle), [0, -1, 0])*dpg.create_translation_matrix([planet1_distance, 0]))
-    # dpg.apply_transform("planet node 1", dpg.create_rotation_matrix(math.radians(planet1_angle), [0, 0, -1])*dpg.create_translation_matrix([planet1_distance, 0]))
-
-    dpg.render_dearpygui_frame()
-
-dpg.destroy_context()
+# Решение системы
+U = np.linalg.solve(K_global, F)
+print(f"Прогиб в середине: {U[2]:.4f} м")
