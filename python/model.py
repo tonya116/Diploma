@@ -3,6 +3,8 @@ import math
 import os
 from dearpygui import dearpygui as dpg
 from Entities.force import Force
+from Entities.distributed_force import DistributedForce
+
 from Entities.node import Node
 from Entities.element import Element
 from Entities.fixed import Fixed
@@ -40,6 +42,7 @@ class Model:
         self.materials = {}
         self.forces = []
         self.supports = []
+        self.distributed_forces = []
 
         self.name = None
         
@@ -93,8 +96,10 @@ class Model:
             if load.get("type") == "force":
             
                 self.forces.append(
-                    Force(self.nodes[load.get("node")].point, Vector(*load.get("values")))
+                    Force(self.nodes[load.get("node")].point, Vector(*load.get("direction")))
                 )
+            elif load.get("type") == "distributed_force":
+                self.distributed_forces.append(DistributedForce(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("direction")), load.get("lenght")))
                 
         for support in self.data.get("supports"):
             

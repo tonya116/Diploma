@@ -200,7 +200,7 @@ class Window:
             return
         
         self.current_model.update()
-        drawables = [self.current_model.nodes, self.current_model.elements, self.current_model.supports, self.current_model.forces]
+        drawables = [self.current_model.nodes, self.current_model.elements, self.current_model.supports, self.current_model.forces, self.current_model.distributed_forces]
         
         for drawable in drawables:
             for object in drawable:
@@ -210,7 +210,7 @@ class Window:
                     elif isinstance(prim, Line):
                         dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
                     elif isinstance(prim, Arrow):
-                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
+                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
 
                 
     def select_open_file_cb(self, sender, app_data, user_data):
