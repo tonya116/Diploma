@@ -1,10 +1,13 @@
 ﻿import numpy as np
+from Geometry.Vector import Vector
+from Geometry.Point import Point
+
 
 class Force:
-    def __init__(self, point, direction):
+    def __init__(self, point: Point, direction: Vector):
         self.point = point
         self.direction = direction
-        self.force = np.linalg.norm(self.direction)
+        self.force = np.linalg.norm(self.direction.asList())
 
 
     def __str__(self):

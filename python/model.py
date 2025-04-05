@@ -2,9 +2,13 @@
 import math
 import os
 from dearpygui import dearpygui as dpg
-from python.Entities.force import Force
-from python.Entities.node import Node
-from python.Entities.element import Element
+from Entities.force import Force
+from Entities.node import Node
+from Entities.element import Element
+
+from Geometry.Vector import Vector
+from Geometry.Point import Point
+
 
 import configparser
 
@@ -86,8 +90,9 @@ class Model:
         self.loads = self.data.get("loads")
         for load in self.data.get("loads"):
             if load.get("type") == "force":
+            
                 self.forces.append(
-                    Force(self.nodes[load.get("node")].point, load.get("values"))
+                    Force(Point(*self.nodes[load.get("node")].point), Vector(*load.get("values")))
                 )
         self.boundary_conditions = self.data.get("boundary_conditions")
 

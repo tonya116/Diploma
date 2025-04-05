@@ -209,7 +209,7 @@ class Window:
 
         for force in self.current_model.forces:
             print(force)
-            # dpg.draw_arrow(force.point, )
+            dpg.draw_arrow(force.point.asList(), (force.point+force.direction).asList(), color=eval(setting("ForceColor")), thickness=2)
 
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
