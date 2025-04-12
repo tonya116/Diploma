@@ -31,6 +31,14 @@
                 4,
                 0
             ]
+        },
+        {
+            "id": 5,
+            "coordinates": [
+                4,
+                0,
+                0
+            ]
         }
     ],
     "elements": [
@@ -76,9 +84,8 @@
             ]
         },
         {
-            "element": 1,
+            "node": 5,
             "type": "momentum",
-            "offset": 2,
             "momentum": [
                 10,
                 0,

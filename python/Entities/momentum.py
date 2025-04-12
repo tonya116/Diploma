@@ -3,37 +3,32 @@ import numpy as np
 from Geometry.Point import Point
 from Geometry.Primitives.QBezier import QBezier
 from Geometry.Vector import Vector
+from Geometry.Matrix import TranslationMatrix
+from .node import Node
+
 from config import config
 
 class Momentum:
-    def __init__(self, element, offset: float, direction: Vector):
-        self.element = element
-        self.offset = offset
+    def __init__(self, node:Node, direction: Vector):
+
+        self.node: Node = node
         self.direction = direction
         self.force = np.linalg.norm(self.direction.asList())
         self.primitives = []
+        self.ctrlPoints:list[Point] = [Point(0, -2, 0), Point(4, 0, 0), Point(0, 2, 0)]
 
     def __str__(self):
-        return f"Element: {self.element}, Direction: {self.direction}, Momentum: {self.force}"
+        return f"Node: {self.node}, Direction: {self.direction}, Momentum: {self.force}"
 
     def __repr__(self):
-        print(f"Element: {self.element}, Direction: {self.direction}, Momentum: {self.force}")
+        print(self.__str__())
 
     def geometry(self):
-        radius = 2
-        t = self.element.end_node.point - self.element.start_node.point
-        ort = Vector()
-        if self.force > 0:
-            ort = t / t.norm()
 
-        self.primitives.append(
-            QBezier(
-                (self.element.start_node.point + ort * self.offset + Point(0, -radius, 0)).asList(),
-                (self.element.start_node.point + ort * self.offset + Point(radius, 0, 0)).asList(),
-                (self.element.start_node.point + ort * self.offset + Point(0, radius, 0)).asList(),
-                2,
-                eval(config("ForceColor")),
-                5,
-        ))
+        mt = TranslationMatrix(self.node.point)
+        for i in range(len(self.ctrlPoints)):
+            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
+                    
+        self.primitives.append(QBezier(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), self.ctrlPoints[2].asList(), 2, eval(config("ForceColor")), 5))
 
         return self.primitives

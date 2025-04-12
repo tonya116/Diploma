@@ -93,7 +93,7 @@ class Model:
                 self.distributed_forces.append(DistributedForce(self.nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
                 
             elif load.get("type") == "momentum":
-                self.momentums.append(Momentum(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("momentum"))))
+                self.momentums.append(Momentum(self.nodes[load.get("node")-1], Vector(*load.get("momentum"))))
                 
         for support in self.data.get("supports"):
             

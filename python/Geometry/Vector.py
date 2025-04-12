@@ -36,8 +36,14 @@ class Vector:
     def __repr__(self):
         print(self.__str__())
     
-    def norm(self):
-
+    def cross(self, other):
+        """Векторное произведение (кросс-произведение) с другим вектором."""
+        new_x = self.y * other.z - self.z * other.y
+        new_y = self.z * other.x - self.x * other.z
+        new_z = self.x * other.y - self.y * other.x
+        return Vector(new_x, new_y, new_z)
+        
+    def norm(self) -> float:
         return np.linalg.norm(self.asList())
     
     def asList(self):
