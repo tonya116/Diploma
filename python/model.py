@@ -8,22 +8,12 @@ from Entities.distributed_force import DistributedForce
 from Entities.node import Node
 from Entities.element import Element
 from Entities.fixed import Fixed
+from Entities.pinned import Pinned
+
 from Entities.momentum import Momentum
 
 from Geometry.Vector import Vector
 from Geometry.Point import Point
-
-
-import configparser
-
-# Создаём парсер
-config = configparser.ConfigParser()
-
-# Читаем файл
-config.read(os.getcwd() + "/python/config.ini")
-
-def setting(key):
-    return config['DEFAULT'].get(key)
 
 class Model:
     def __init__(self):
@@ -44,6 +34,7 @@ class Model:
         self.forces = []
         self.supports = []
         self.distributed_forces = []
+        self.momentums = []
 
         self.name = None
         
@@ -103,19 +94,14 @@ class Model:
                 self.distributed_forces.append(DistributedForce(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("direction")), load.get("lenght")))
                 
             elif load.get("type") == "momentum":
-                self.distributed_forces.append(Momentum(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("momentum"))))
+                self.momentums.append(Momentum(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("momentum"))))
                 
         for support in self.data.get("supports"):
             
-            self.supports.append(Fixed(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
-            
-        print(
-            self.nodes,
-            self.elements,
-            self.materials,
-            self.loads,
-            sep="\n",
-        )
+            if support.get("type") == "fixed":
+                self.supports.append(Fixed(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
+            elif support.get("type") == "pinned":
+                self.supports.append(Pinned(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
 
     def update(self):
         self.model_matrix = (

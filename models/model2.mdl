@@ -93,6 +93,12 @@
             "node": 3,
             "type": "fixed",
             "direction": [1, 0, 0]
+        },
+        {
+            "id": 2,
+            "node": 2,
+            "type": "pinned",
+            "direction": [1, 0, 0]
         }
     ]
 }

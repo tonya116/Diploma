@@ -4,70 +4,15 @@ import os
 
 from dearpygui import dearpygui as dpg
 from model import Model
-import configparser
-import numpy as np
-from Geometry.Circle import Circle
-from Geometry.Line import Line
-from Geometry.Arrow import Arrow
-from Geometry.QBezier import QBezier
+from Geometry.Primitives.Circle import Circle
+from Geometry.Primitives.Line import Line
+from Geometry.Primitives.Arrow import Arrow
+from Geometry.Primitives.QBezier import QBezier
+from config import config
 
-def invert_matrix(mat):
-    """Инвертирование 4x4 матрицы, представленной как flat list"""
-    # Для ортогональной матрицы можно использовать упрощенный метод
-    # (транспонирование вращения и инвертирование перемещения)
-    
-    # Разбираем матрицу на компоненты
-    print(type(mat))
-    # for i in mat:
-    #     print(i)
-        
-    # m = []
-    # for i in mat:
-    #     t = []
-    #     for j in i:
-    #         t.append(j)
-    #     m.append(t)
-        
-        
-        
-    # m = [mat[i*4:(i+1)*4] for i in range(4)]
-    
-    # Вычисляем обратную матрицу вращения (транспонирование)
-    inv_rot = [
-        [m[0][0], m[1][0], m[2][0], 0],
-        [m[0][1], m[1][1], m[2][1], 0],
-        [m[0][2], m[1][2], m[2][2], 0],
-        [0, 0, 0, 1]
-    ]
-    
-    # Вычисляем обратное перемещение
-    inv_trans = [
-        [1, 0, 0, -m[3][0]],
-        [0, 1, 0, -m[3][1]],
-        [0, 0, 1, -m[3][2]],
-        [0, 0, 0, 1]
-    ]
-    
-    # Комбинируем (умножаем матрицы)
-    result = [0]*16
-    for i in range(4):
-        for j in range(4):
-            for k in range(4):
-                result[i*4+j] += inv_rot[i][k] * inv_trans[k][j]
-    
-    return result
 
-# Создаём парсер
-config = configparser.ConfigParser()
-
-# Читаем файл
-config.read(os.getcwd() + "/python/config.ini")
-
-def setting(key):
-    return config['DEFAULT'].get(key)
-
-W = int(setting("WIDTH"))
-H = int(setting("HEIGHT"))
+W = int(config("WIDTH"))
+H = int(config("HEIGHT"))
 
 class Window:
     def __init__(self):
@@ -169,7 +114,7 @@ class Window:
                         #     p[0] = q[0] + W//8
                         #     p[1] = q[1] + H//4
                         
-                        # dpg.draw_line(p1=[screen_x + 500, screen_y + 500], p2=p, color=eval(setting("LineColor")), thickness=2)
+                        # dpg.draw_line(p1=[screen_x + 500, screen_y + 500], p2=p, color=eval(config("LineColor")), thickness=2)
 
 # Получаем экранные координаты (w=1, поэтому деление не нужно)
                 screen_x = transformed[0] + W//8
@@ -201,21 +146,20 @@ class Window:
             return
         
         self.current_model.update()
-        drawables = [self.current_model.elements, self.current_model.nodes, self.current_model.supports, self.current_model.forces, self.current_model.distributed_forces]
+        drawables = [self.current_model.elements, self.current_model.nodes, self.current_model.supports, self.current_model.forces, self.current_model.distributed_forces, self.current_model.momentums]
         
         for drawable in drawables:
             for object in drawable:
                 for prim in object.geometry():
-                    if isinstance(prim, Circle):
-                        dpg.draw_circle(prim.center, radius=prim.radius, color=prim.color, thickness=prim.thickness)
+                    if isinstance(prim, Arrow):
+                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
+                    elif isinstance(prim, Circle):
+                        dpg.draw_circle(center=prim.pos.asList(), radius=prim.radius, color=prim.color, thickness=prim.thickness)
                     elif isinstance(prim, Line):
                         dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
-                    elif isinstance(prim, Arrow):
-                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
                     elif isinstance(prim, QBezier):
                         dpg.draw_bezier_quadratic(prim.p1, prim.p2, prim.p3, color=prim.color, thickness=prim.thickness)
                         
-                
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
         self.current_model.load_model(app_data.get("file_path_name"))
@@ -276,6 +220,15 @@ class Window:
                         
         dpg.delete_item("file_dialog_id")
 
+    def build_tree(self, parent, data):
+        for key, value in data.items():
+            if isinstance(value, dict):
+                with dpg.tree_node(label=key, parent=parent):
+                    self.build_tree(parent, value)  # Рекурсия для вложенных данных
+            else:
+                dpg.add_text(label=key, parent=parent, default_value=str(value))
+
+
     def setup(self):
         # Основное окно
         with dpg.window(label="Build v0.0.4", tag="main_window", width=W, height=H):
@@ -289,17 +242,29 @@ class Window:
             with dpg.group(horizontal=True):
 
                 # Левый блок — Канвас
-                with dpg.child_window(width=W//1, height=H):
+                with dpg.child_window(width=W//4, height=H):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
                         pass
 
                 # Правый блок — Инспектор
+                data = {
+                    "User Data": {
+                        "Name": "Alice",
+                        "Age": 30,
+                        "Contacts": {
+                            "Email": "alice@example.com",
+                            "Phone": "123-456-7890"
+                        }
+                    }
+                }
                 with dpg.child_window(width=W//2, height=H):
-                    dpg.add_text("Inspector")
-                    dpg.add_text("Selected Node:", tag="node_id_text")
-                    dpg.add_input_int(label="X", tag="x_coord", callback=self.callback)
-                    dpg.add_input_int(label="Y", tag="y_coord", callback=self.callback)
+                    self.build_tree("##dynamic_tree_root", data)
+                    
+                dpg.add_text("Inspector")
+                dpg.add_text("Selected Node:", tag="node_id_text")
+                dpg.add_input_int(label="X", tag="x_coord", callback=self.callback)
+                dpg.add_input_int(label="Y", tag="y_coord", callback=self.callback)
 
         with dpg.handler_registry():
             dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)

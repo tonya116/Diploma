@@ -1,20 +1,9 @@
-import configparser
-import os
 
 import numpy as np
 from Geometry.Point import Point
-from Geometry.QBezier import QBezier
+from Geometry.Primitives.QBezier import QBezier
 from Geometry.Vector import Vector
-
-# Создаём парсер
-config = configparser.ConfigParser()
-
-# Читаем файл
-config.read(os.getcwd() + "/python/config.ini")
-
-def setting(key):
-    return config['DEFAULT'].get(key)
-
+from config import config
 
 class Momentum:
     def __init__(self, element, offset: float, direction: Vector):
@@ -43,7 +32,7 @@ class Momentum:
                 (self.element.start_node.point + ort * self.offset + Point(radius, 0, 0)).asList(),
                 (self.element.start_node.point + ort * self.offset + Point(0, radius, 0)).asList(),
                 2,
-                eval(setting("ForceColor")),
+                eval(config("ForceColor")),
                 5,
         ))
 

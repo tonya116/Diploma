@@ -1,29 +1,25 @@
-﻿import configparser
-import os
+﻿
 from Geometry.Vector import Vector
 from Geometry.Point import Point
-from Geometry.Circle import Circle
-
-# Создаём парсер
-config = configparser.ConfigParser()
-
-# Читаем файл
-config.read(os.getcwd() + "/python/config.ini")
-
-def setting(key):
-    return config['DEFAULT'].get(key)
-
+from Geometry.Primitives.Circle import Circle
+from config import config
 
 class Node:
-
     def __init__(self, id, point:Point):
         self.id = id
         self.point = point
         self.primitives = []
-        
+    
+    def __str__(self):
+        return f"ID: {self.id}, Point: {self.point}"
+    
     def __repr__(self):
-        return f"ID: {self.id}, point: {self.point}"
+        print(self.__str__())
     
     def geometry(self):
-        self.primitives.append(Circle(self.point.asList(), 5, eval(setting("NodeColor")), 5))
+        self.primitives.append(Circle(Point(), 5, eval(config("NodeColor")), 5))
+        
+        for prim in self.primitives:
+            prim.translate(self.point)
+        
         return self.primitives
