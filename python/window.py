@@ -117,7 +117,7 @@ class Window:
                         
                         # dpg.draw_line(p1=[screen_x + 500, screen_y + 500], p2=p, color=eval(config("LineColor")), thickness=2)
 
-# Получаем экранные координаты (w=1, поэтому деление не нужно)
+                # Получаем экранные координаты (w=1, поэтому деление не нужно)
                 screen_x = transformed[0] + W//8
                 screen_y = transformed[1] + H//4
                 print(f"Point {i} (id={node.id}): model={node.point}, screen=({screen_x}, {screen_y})")

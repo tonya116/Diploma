@@ -66,9 +66,8 @@
             ]
         },
         {
-            "element": 2,
+            "node": 4,
             "type": "distributed_force",
-            "offset": 4,
             "lenght": 3,
             "direction": [
                 10,

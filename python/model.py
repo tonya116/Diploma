@@ -90,7 +90,7 @@ class Model:
                     Force(self.nodes[load.get("node")].point, Vector(*load.get("direction")))
                 )
             elif load.get("type") == "distributed_force":
-                self.distributed_forces.append(DistributedForce(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("direction")), load.get("lenght")))
+                self.distributed_forces.append(DistributedForce(self.nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
                 
             elif load.get("type") == "momentum":
                 self.momentums.append(Momentum(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("momentum"))))

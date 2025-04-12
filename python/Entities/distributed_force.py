@@ -5,12 +5,12 @@ from Geometry.Primitives.Arrow import Arrow
 from Geometry.Primitives.Line import Line
 from config import config
 from Geometry.Matrix import RotationMatrix, TranslationMatrix
+from .node import Node
 from .element import Element
 
 class DistributedForce:
-    def __init__(self, element:Element, offset: float, direction: Vector, lenght: float):
-        self.element:Element = element
-        self.offset:float = offset
+    def __init__(self, node:Node, direction: Vector, lenght: float):
+        self.node: Node = node
         self.direction = direction
         self.lenght = lenght
         self.force = self.direction.norm()
@@ -32,10 +32,8 @@ class DistributedForce:
         print(self.__str__())
         
     def geometry(self):
-        
-        point = self.element.end_node.point - self.element.start_node.point
-        point = self.element.start_node.point + (point / point.norm()) * self.offset
-        mt = TranslationMatrix(point)
+
+        mt = TranslationMatrix(self.node.point)
         mr = RotationMatrix(3.1415/2)
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mr

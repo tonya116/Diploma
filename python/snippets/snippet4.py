@@ -1,24 +1,33 @@
-import dearpygui.dearpygui as dpg
 import numpy as np
+import matplotlib.pyplot as plt
 
-dpg.create_context()
+# Дано
+F = 10  # кН
+L = 4   # м
+a = 1   # м от левой опоры
 
-with dpg.window(label="Ortho Example", width=600, height=600):
-    with dpg.drawlist(width=500, height=500, id="drawlist"):
-        pass
+# 1. Реакции
+R_A = F * (L - a) / L
+R_B = F * a / L
 
-def update_drawlist():
-    
-    l = dpg.create_orthographic_matrix(0, 500, 500, 0, 0.1, 100)
-    l = dpg.create_perspective_matrix(3.1415 * 45.0 / 180.0, 1.0, 0.1, 100)
+# 2. Уравнения усилий
+def Q(x):
+    return np.where(x < a, R_A, R_A - F)
 
-    dpg.apply_transform("drawlist", l)
-    dpg.draw_line("drawlist", (50, 50), (450, 450), color=(255, 0, 0, 255), thickness=3)
-    dpg.draw_circle("drawlist", (250, 250), 100, color=(0, 255, 0, 150), fill=(0, 255, 0, 50))
+def M(x):
+    return np.where(x < a, R_A * x, R_A * x - F * (x - a))
 
-dpg.set_frame_callback(1, update_drawlist)  # Отложенный вызов после инициализации
-dpg.create_viewport(title="Ortho Projection", width=800, height=800)
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
+# 3. Построение эпюр
+x = np.linspace(0, L, 100)
+plt.figure(figsize=(10, 4))
+
+plt.subplot(1, 2, 1)
+plt.plot(x, Q(x))
+plt.title("Эпюра Q (кН)")
+
+plt.subplot(1, 2, 2)
+plt.plot(x, M(x))
+plt.title("Эпюра M (кН·м)")
+
+plt.tight_layout()
+plt.show()
