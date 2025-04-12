@@ -11,7 +11,7 @@
         {
             "id": 2,
             "coordinates": [
-                5,
+                10,
                 0,
                 0
             ]
@@ -19,16 +19,16 @@
         {
             "id": 3,
             "coordinates": [
-                5,
-                5,
+                10,
+                10,
                 0
             ]
         },
         {
             "id": 4,
             "coordinates": [
-                5,
-                2,
+                10,
+                4,
                 0
             ]
         }
@@ -68,7 +68,7 @@
         {
             "element": 2,
             "type": "distributed_force",
-            "offset": 2,
+            "offset": 4,
             "lenght": 3,
             "direction": [
                 10,

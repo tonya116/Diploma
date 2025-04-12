@@ -2,20 +2,30 @@
 from .prop import Support
 
 import numpy as np
+from .node import Node
 from Geometry.Vector import Vector
+from Geometry.Matrix import TranslationMatrix
 from Geometry.Point import Point
 from Geometry.Primitives.Line import Line
 from config import config
 
 class Fixed(Support):
-    def __init__(self, node:int, direction: Vector):
+    def __init__(self, node:Node, direction: Vector):
         super().__init__(node, direction)
         self.primitives = []
+        self.ctrlPoints:list[Point] = []
+        self.ctrlPoints.append(Point(-2, 0, 0))
+        self.ctrlPoints.append(Point(2, 0, 0))
+        for i in range(-1, 3):
+            self.ctrlPoints.append(Point(i, 0, 0))
+            self.ctrlPoints.append(Point(i-1, 1, 0))
 
     def geometry(self):
-        
-        self.primitives.append(Line((self.node.point-self.direction *5 ).asList(), (self.node.point+self.direction * 5).asList(), eval(config("SupportColor")), 5))
-        for i in range(-4, 5):
-            self.primitives.append(Line((self.node.point + self.direction * i).asList(), (self.node.point+self.direction*(i-1) + Point(0, 1, 0)).asList(), eval(config("SupportColor")), 5))
+        mt = TranslationMatrix(self.node.point)
+        for i in range(len(self.ctrlPoints)):
+            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
 
+        for i in range(0, len(self.ctrlPoints), 2):
+            self.primitives.append(Line(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("SupportColor")), 5))
+        
         return self.primitives

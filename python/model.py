@@ -61,7 +61,6 @@ class Model:
     def load_model(self, filename:str):
         
         # TODO Надо бы переписать передачу имени файла
-
         self.name = filename.split("/")[-1][:-4]
         with open(filename, "r", encoding="utf-8-sig") as file:
             self.data = json.load(file)

@@ -37,6 +37,7 @@ class Vector:
         print(self.__str__())
     
     def norm(self):
+
         return np.linalg.norm(self.asList())
     
     def asList(self):

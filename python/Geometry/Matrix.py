@@ -1,3 +1,5 @@
+from Geometry.Vector import Vector
+from math import sin, cos
 class Matrix:
     def __init__(self, data):
         """
@@ -56,6 +58,31 @@ class Matrix:
             ]
             return Matrix(result)
 
+    def __matmul__(self, other):
+        """Умножение матриц через оператор @ (A @ B)."""
+        if not isinstance(other, Matrix):
+            raise TypeError("Ожидается объект класса Matrix")
+        
+        if self.cols != other.rows:
+            raise ValueError(
+                f"Количество столбцов первой матрицы ({self.cols}) "
+                f"должно быть равно количеству строк второй ({other.rows})"
+            )
+        
+        # Создаём результирующую матрицу, заполненную нулями
+        result = [
+            [0 for _ in range(other.cols)]
+            for _ in range(self.rows)
+        ]
+        
+        # Умножение матриц
+        for i in range(self.rows):
+            for j in range(other.cols):
+                for k in range(self.cols):
+                    result[i][j] += self.data[i][k] * other.data[k][j]
+        
+        return Matrix(result)
+
     def transpose(self):
         """Транспонирование матрицы."""
         result = [
@@ -94,28 +121,23 @@ class Matrix:
         """Проверка, является ли матрица квадратной."""
         return self.rows == self.cols
 
-# Пример использования
-if __name__ == "__main__":
-    # Создаём матрицу 3x3
-    m = Matrix([
-        [4, 3, 2],
-        [1, 5, 3],
-        [2, 1, 6]
-    ])
-    
-    print("Матрица:")
-    print(m)
-    print("Определитель:", m.determinant())  # Должно быть 65
-    
-    # Проверка сложения
-    m2 = Matrix([
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1]
-    ])
-    print("\nСложение матриц:")
-    print(m + m2)
-    
-    # Проверка умножения
-    print("\nУмножение матриц:")
-    print(m * m2)  # Умножение на единичную матрицу даст исходную матрицу
+class TranslationMatrix(Matrix):
+    def __init__(self, dirVec: Vector = Vector(0, 0, 0)):
+        self.data = [[1, 0, 0, dirVec.x], [0, 1, 0, dirVec.y], [0, 0, 1, dirVec.z], [0, 0, 0, 1]]
+        super().__init__(self.data)
+        
+class RotationMatrix(Matrix):
+    def __init__(self, angle:float = 0, dirVec: Vector = Vector(0, 0, 1)):
+        self.K = [
+        [0,    -dirVec.z,   dirVec.y],
+        [dirVec.z,    0,   -dirVec.x],
+        [-dirVec.y,  dirVec.x,    0]
+        ]
+        
+        self.eye = Matrix([[int(i == j) for j in range(3)] for i in range(3)])
+        
+        sin_theta = sin(angle)
+        cos_theta = cos(angle)
+        
+        self.data = (self.eye + Matrix(self.K) * sin_theta + (Matrix(self.K) @ Matrix(self.K)) * (1 - cos_theta)).data
+        super().__init__(self.data)

@@ -3,18 +3,28 @@ from Geometry.Vector import Vector
 from Geometry.Point import Point
 from Geometry.Primitives.Arrow import Arrow
 from Geometry.Primitives.Line import Line
-from Geometry.Primitives.Entity import Entity
 from config import config
+from Geometry.Matrix import RotationMatrix, TranslationMatrix
+from .element import Element
 
 class DistributedForce:
-    def __init__(self, element, offset: float, direction: Vector, lenght: float):
-        self.element = element
-        self.offset = offset
+    def __init__(self, element:Element, offset: float, direction: Vector, lenght: float):
+        self.element:Element = element
+        self.offset:float = offset
         self.direction = direction
         self.lenght = lenght
         self.force = self.direction.norm()
         self.primitives = []
-
+        self.ctrlPoints:list[Point] = []
+        self.ctrlPoints.append(Point(-self.lenght/2, -2, 0))
+        self.ctrlPoints.append(Point(self.lenght/2, -2, 0))
+        
+        n = 4
+        step = self.lenght/4
+        for i in range(-2, 3):
+            self.ctrlPoints.append(Point(i * step, 0, 0))
+            self.ctrlPoints.append(Point(i * step, -2, 0))
+            
     def __str__(self):
         return f"Element: {self.element}, Offset: {self.offset}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
 
@@ -23,19 +33,18 @@ class DistributedForce:
         
     def geometry(self):
         
-        N = 5
-        t = self.element.end_node.point - self.element.start_node.point
-        ort = Vector()
-        if self.force > 0:
-            ort = t / t.norm()
-        
-        DFPoint = ort * self.offset
-        step = self.lenght/(N + 1) 
-        force_vector = self.direction
-        for i in range(N):
-            u = (step * i - self.offset/2)
-            at = DFPoint + ort * u + self.element.start_node.point
-            self.primitives.append(Arrow(at.asList(), (at + force_vector).asList(), eval(config("ForceColor")), 2))
-        self.primitives.append(Line((self.element.start_node.point + DFPoint + force_vector + (ort * (-self.lenght/2))).asList(), (self.element.start_node.point + DFPoint + force_vector + (ort * self.lenght/2)).asList(), eval(config("ForceColor")), 2))
+        point = self.element.end_node.point - self.element.start_node.point
+        point = self.element.start_node.point + (point / point.norm()) * self.offset
+        mt = TranslationMatrix(point)
+        mr = RotationMatrix(3.1415/2)
+        for i in range(len(self.ctrlPoints)):
+            self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
+            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
+            print(self.ctrlPoints[i])
+            
+        self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))
+
+        for i in range(2, len(self.ctrlPoints), 2):
+            self.primitives.append(Arrow(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("ForceColor")), 1))
 
         return self.primitives

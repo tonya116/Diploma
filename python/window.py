@@ -14,6 +14,7 @@ from config import config
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
 
+
 class Window:
     def __init__(self):
         
@@ -119,8 +120,6 @@ class Window:
 # Получаем экранные координаты (w=1, поэтому деление не нужно)
                 screen_x = transformed[0] + W//8
                 screen_y = transformed[1] + H//4
-                
-
                 print(f"Point {i} (id={node.id}): model={node.point}, screen=({screen_x}, {screen_y})")
                 
                 # Вычисляем расстояние до курсора
@@ -154,7 +153,7 @@ class Window:
                     if isinstance(prim, Arrow):
                         dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
                     elif isinstance(prim, Circle):
-                        dpg.draw_circle(center=prim.pos.asList(), radius=prim.radius, color=prim.color, thickness=prim.thickness)
+                        dpg.draw_circle(center=prim.pos, radius=prim.radius, color=prim.color, thickness=prim.thickness)
                     elif isinstance(prim, Line):
                         dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
                     elif isinstance(prim, QBezier):
@@ -172,20 +171,21 @@ class Window:
         print(f"Active tab: {app_data}")
 
     def calculate(self):
-
+        callback_type = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double)
+        callback_ptr = callback_type(f)
         # Путь к скомпилированной C++ библиотеке
         lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
         calculations = ctypes.CDLL(lib_path)
+        calculations.integral.argtypes = [callback_ptr, ctypes.c_int, ctypes.c_int]
+        calculations.integral.restype = ctypes.c_double
+        calculations.integral(callback_ptr, 0, 10)
 
-        calculations.createMatrix.argtypes = [ctypes.c_int, ctypes.c_int]
-        calculations.createMatrix.restype = ctypes.c_void_p
+        # calculations.destroyMatrix.argtypes = [ctypes.c_void_p]
 
-        calculations.destroyMatrix.argtypes = [ctypes.c_void_p]
+        # calculations.getDeterminant.argtypes = [ctypes.c_void_p]
 
-        calculations.getDeterminant.argtypes = [ctypes.c_void_p]
-
-        mat = calculations.createMatrix(5, 5)
-        print(mat)
+        # mat = calculations.createMatrix(5, 5)
+        # print(mat)
         # Создаем массив данных
 
     def callback(self, sender, app_data, user_data):
@@ -201,7 +201,7 @@ class Window:
             width=700,
             height=400,
         ):
-            dpg.add_file_extension(".mdl", color=(255, 0, 255, 255), custom_text="[model]")
+            dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
     def create_tab(self, model_name):
 
@@ -214,7 +214,7 @@ class Window:
             # Добавляем область для рисования (drawlist) на этой вкладке
             with dpg.drawlist(width=W, height=H, tag=self.drawlist_id):
                 with dpg.draw_layer( parent=self.drawlist_id, tag=self.draw_layer_id):
-                    with dpg.draw_node(parent=self.draw_layer_id, tag=self.current_model.draw_node_id):
+                    with dpg.draw_node(parent=self.draw_layer_id, tag=self.current_model.draw_node_id) as f:
                         self.current_model.set_pos([W//8, H//4])
                         self.draw_model()
                         
@@ -228,10 +228,9 @@ class Window:
             else:
                 dpg.add_text(label=key, parent=parent, default_value=str(value))
 
-
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.4", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.5", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
@@ -242,7 +241,7 @@ class Window:
             with dpg.group(horizontal=True):
 
                 # Левый блок — Канвас
-                with dpg.child_window(width=W//4, height=H):
+                with dpg.child_window(width=W//2, height=H):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
                         pass
@@ -258,7 +257,7 @@ class Window:
                         }
                     }
                 }
-                with dpg.child_window(width=W//2, height=H):
+                with dpg.child_window(width=W//1, height=H):
                     self.build_tree("##dynamic_tree_root", data)
                     
                 dpg.add_text("Inspector")
