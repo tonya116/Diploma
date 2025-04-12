@@ -105,6 +105,12 @@
             "node": 2,
             "type": "pinned",
             "direction": [1, 0, 0]
+        },
+        {
+            "id": 3,
+            "node": 1,
+            "type": "roller",
+            "direction": [0, -1, 0]
         }
     ]
 }

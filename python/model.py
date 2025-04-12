@@ -9,6 +9,7 @@ from Entities.node import Node
 from Entities.element import Element
 from Entities.fixed import Fixed
 from Entities.pinned import Pinned
+from Entities.roller import Roller
 
 from Entities.momentum import Momentum
 
@@ -101,6 +102,8 @@ class Model:
                 self.supports.append(Fixed(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
             elif support.get("type") == "pinned":
                 self.supports.append(Pinned(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
+            elif support.get("type") == "roller":
+                self.supports.append(Roller(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
 
     def update(self):
         self.model_matrix = (
