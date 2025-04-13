@@ -8,21 +8,13 @@ from Entities.distributed_force import DistributedForce
 from Entities.node import Node
 from Entities.element import Element
 from Entities.fixed import Fixed
+from Entities.pinned import Pinned
+from Entities.roller import Roller
+
+from Entities.momentum import Momentum
 
 from Geometry.Vector import Vector
 from Geometry.Point import Point
-
-
-import configparser
-
-# Создаём парсер
-config = configparser.ConfigParser()
-
-# Читаем файл
-config.read(os.getcwd() + "/python/config.ini")
-
-def setting(key):
-    return config['DEFAULT'].get(key)
 
 class Model:
     def __init__(self):
@@ -36,23 +28,22 @@ class Model:
         
         self.scale = 1
         
-        self.data = ""
-        self.nodes = []
-        self.elements = []
-        self.materials = {}
-        self.forces = []
-        self.supports = []
-        self.distributed_forces = []
-
+        self.data = {}
+        self.dsi = -3
+       
         self.name = None
         
         self.draw_node_id = dpg.generate_uuid()
 
         self.proj = dpg.create_orthographic_matrix(0, 1, 0, 1, 0, 1)
 
-    def set_pos(self, point):
-        self.x = point[0]
-        self.y = point[1]
+    def move(self, delta: Vector):
+        self.x += delta.x
+        self.y += delta.y
+
+    def set_pos(self, point:Vector):
+        self.x = point.x
+        self.y = point.y
 
     def get_pos(self):
         return [self.x, self.y]
@@ -69,49 +60,54 @@ class Model:
     def load_model(self, filename:str):
         
         # TODO Надо бы переписать передачу имени файла
-
         self.name = filename.split("/")[-1][:-4]
         with open(filename, "r", encoding="utf-8-sig") as file:
-            self.data = json.load(file)
-        self.__parse_model()
+            data = json.load(file)
+        self.__parse_model(data)
+                
+        for sup in self.data.get("supports"):
+            self.dsi += sup.dof
+        
+        print(f"Степень статической неопределимости: {self.dsi}")
+        
+    def __parse_model(self, data:dict):
+        nodes = []
+        elements = []
+        loads = []
+        supports = []
+        for node in data.get("nodes"):
+            nodes.append(Node(node.get("id"), Point(*node.get("coordinates"))))
+        self.data.update({"nodes": nodes})
 
-    def __parse_model(self):
-
-        for node in self.data.get("nodes"):
-            self.nodes.append(Node(node.get("id"), Point(*node.get("coordinates"))))
-
-        for element in self.data.get("elements"):
-            self.elements.append(
+        for element in data.get("elements"):
+            elements.append(
                 Element(
                     element.get("id"),
-                    self.nodes[element.get("start_node")-1],
-                    self.nodes[element.get("end_node")-1],
+                    self.data.get("nodes")[element.get("start_node") - 1],
+                    self.data.get("nodes")[element.get("end_node") - 1],
                     element.get("type"),
                     element.get("material"),
-                )
-            )
+            ))
+        self.data.update({"elements": elements})
 
-        self.loads = self.data.get("loads")
-        for load in self.data.get("loads"):
+        for load in data.get("loads"):
             if load.get("type") == "force":
-            
-                self.forces.append(
-                    Force(self.nodes[load.get("node")].point, Vector(*load.get("direction")))
-                )
+                loads.append(Force(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction"))))
             elif load.get("type") == "distributed_force":
-                self.distributed_forces.append(DistributedForce(self.elements[load.get("element")-1],  load.get("offset"), Vector(*load.get("direction")), load.get("lenght")))
+                loads.append(DistributedForce(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
+            elif load.get("type") == "momentum":
+                loads.append(Momentum(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("momentum"))))
+        self.data.update({"loads": loads})
+
+        for support in data.get("supports"):
+            if support.get("type") == "fixed":
+                supports.append(Fixed(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+            elif support.get("type") == "pinned":
+                supports.append(Pinned(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+            elif support.get("type") == "roller":
+                supports.append(Roller(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
                 
-        for support in self.data.get("supports"):
-            
-            self.supports.append(Fixed(self.nodes[support.get("node")-1], Vector(*support.get("direction"))))
-            
-        print(
-            self.nodes,
-            self.elements,
-            self.materials,
-            self.loads,
-            sep="\n",
-        )
+        self.data.update({"supports": supports})
 
     def update(self):
         self.model_matrix = (

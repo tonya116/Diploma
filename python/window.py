@@ -1,72 +1,29 @@
 import ctypes
 import math
 import os
+from typing import Any
 
 from dearpygui import dearpygui as dpg
 from model import Model
-import configparser
-import numpy as np
-from Geometry.Circle import Circle
-from Geometry.Line import Line
-from Geometry.Arrow import Arrow
+from Geometry.Primitives.Circle import Circle
+from Geometry.Primitives.Line import Line
+from Geometry.Primitives.Arrow import Arrow
+from Geometry.Primitives.QBezier import QBezier
+from config import config
+from Geometry.Vector import Vector
+from Entities.node import Node
+from Entities.element import Element
+from Entities.fixed import Fixed
+from Entities.pinned import Pinned
+from Entities.roller import Roller
+from Entities.force import Force
+from Entities.distributed_force import DistributedForce
+from Entities.momentum import Momentum
 
-def invert_matrix(mat):
-    """Инвертирование 4x4 матрицы, представленной как flat list"""
-    # Для ортогональной матрицы можно использовать упрощенный метод
-    # (транспонирование вращения и инвертирование перемещения)
-    
-    # Разбираем матрицу на компоненты
-    print(type(mat))
-    # for i in mat:
-    #     print(i)
-        
-    # m = []
-    # for i in mat:
-    #     t = []
-    #     for j in i:
-    #         t.append(j)
-    #     m.append(t)
-        
-        
-        
-    # m = [mat[i*4:(i+1)*4] for i in range(4)]
-    
-    # Вычисляем обратную матрицу вращения (транспонирование)
-    inv_rot = [
-        [m[0][0], m[1][0], m[2][0], 0],
-        [m[0][1], m[1][1], m[2][1], 0],
-        [m[0][2], m[1][2], m[2][2], 0],
-        [0, 0, 0, 1]
-    ]
-    
-    # Вычисляем обратное перемещение
-    inv_trans = [
-        [1, 0, 0, -m[3][0]],
-        [0, 1, 0, -m[3][1]],
-        [0, 0, 1, -m[3][2]],
-        [0, 0, 0, 1]
-    ]
-    
-    # Комбинируем (умножаем матрицы)
-    result = [0]*16
-    for i in range(4):
-        for j in range(4):
-            for k in range(4):
-                result[i*4+j] += inv_rot[i][k] * inv_trans[k][j]
-    
-    return result
 
-# Создаём парсер
-config = configparser.ConfigParser()
-
-# Читаем файл
-config.read(os.getcwd() + "/python/config.ini")
-
-def setting(key):
-    return config['DEFAULT'].get(key)
-
-W = int(setting("WIDTH"))
-H = int(setting("HEIGHT"))
+W = int(config("WIDTH"))
+H = int(config("HEIGHT"))
+DEFAULT = True
 
 class Window:
     def __init__(self):
@@ -108,10 +65,11 @@ class Window:
     def mouse_drag_handler(self, sender, app_data, user_data):
         
         if self.current_model:
-            
             dx, dy = dpg.get_mouse_drag_delta()
             self.current_model.rotate_x(dx/100)
             self.current_model.rotate_y(dy/100)
+
+            # self.current_model.set_pos(Vector(dx/2 - W//2, dy/2 - H//2, 0))
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
         if self.current_model and app_data == dpg.mvMouseButton_Left:
@@ -168,26 +126,24 @@ class Window:
                         #     p[0] = q[0] + W//8
                         #     p[1] = q[1] + H//4
                         
-                        # dpg.draw_line(p1=[screen_x + 500, screen_y + 500], p2=p, color=eval(setting("LineColor")), thickness=2)
+                        # dpg.draw_line(p1=[screen_x + 500, screen_y + 500], p2=p, color=eval(config("LineColor")), thickness=2)
 
-# Получаем экранные координаты (w=1, поэтому деление не нужно)
+                # Получаем экранные координаты (w=1, поэтому деление не нужно)
                 screen_x = transformed[0] + W//8
                 screen_y = transformed[1] + H//4
-                
-
                 print(f"Point {i} (id={node.id}): model={node.point}, screen=({screen_x}, {screen_y})")
                 
-                # Вычисляем расстояние до курсора
-                distance = ((screen_x - mouse_pos[0])**2 + (screen_y - mouse_pos[1])**2)**0.5
+            #     # Вычисляем расстояние до курсора
+            #     distance = ((screen_x - mouse_pos[0])**2 + (screen_y - mouse_pos[1])**2)**0.5
                 
-                if distance < threshold and distance < min_distance:
-                    min_distance = distance
-                    closest_node = node
+            #     if distance < threshold and distance < min_distance:
+            #         min_distance = distance
+            #         closest_node = node
             
-            if closest_node:
-                return closest_node.id
-            else:
-                return None
+            # if closest_node:
+            #     return closest_node.id
+            # else:
+            #     return None
         
     def mouse_wheel_handler(self, sender, app_data, user_data):
         if self.current_model:
@@ -200,19 +156,19 @@ class Window:
             return
         
         self.current_model.update()
-        drawables = [self.current_model.nodes, self.current_model.elements, self.current_model.supports, self.current_model.forces, self.current_model.distributed_forces]
         
-        for drawable in drawables:
-            for object in drawable:
+        for key, val in self.current_model.data.items():
+            for object in val:
                 for prim in object.geometry():
-                    if isinstance(prim, Circle):
-                        dpg.draw_circle(prim.center, radius=prim.radius, color=prim.color, thickness=prim.thickness)
+                    if isinstance(prim, Arrow):
+                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
+                    elif isinstance(prim, Circle):
+                        dpg.draw_circle(center=prim.pos, radius=prim.radius, color=prim.color, thickness=prim.thickness)
                     elif isinstance(prim, Line):
                         dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
-                    elif isinstance(prim, Arrow):
-                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
-
-                
+                    elif isinstance(prim, QBezier):
+                        dpg.draw_bezier_quadratic(prim.p1, prim.p2, prim.p3, color=prim.color, thickness=prim.thickness)
+                        
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
         self.current_model.load_model(app_data.get("file_path_name"))
@@ -225,20 +181,22 @@ class Window:
         print(f"Active tab: {app_data}")
 
     def calculate(self):
+        pass
+        # callback_type = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double)
+        # callback_ptr = callback_type()
+        # # Путь к скомпилированной C++ библиотеке
+        # lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
+        # calculations = ctypes.CDLL(lib_path)
+        # calculations.integral.argtypes = [callback_ptr, ctypes.c_int, ctypes.c_int]
+        # calculations.integral.restype = ctypes.c_double
+        # calculations.integral(callback_ptr, 0, 10)
 
-        # Путь к скомпилированной C++ библиотеке
-        lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
-        calculations = ctypes.CDLL(lib_path)
+        # calculations.destroyMatrix.argtypes = [ctypes.c_void_p]
 
-        calculations.createMatrix.argtypes = [ctypes.c_int, ctypes.c_int]
-        calculations.createMatrix.restype = ctypes.c_void_p
+        # calculations.getDeterminant.argtypes = [ctypes.c_void_p]
 
-        calculations.destroyMatrix.argtypes = [ctypes.c_void_p]
-
-        calculations.getDeterminant.argtypes = [ctypes.c_void_p]
-
-        mat = calculations.createMatrix(5, 5)
-        print(mat)
+        # mat = calculations.createMatrix(5, 5)
+        # print(mat)
         # Создаем массив данных
 
     def callback(self, sender, app_data, user_data):
@@ -254,7 +212,7 @@ class Window:
             width=700,
             height=400,
         ):
-            dpg.add_file_extension(".mdl", color=(255, 0, 255, 255), custom_text="[model]")
+            dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
     def create_tab(self, model_name):
 
@@ -267,20 +225,187 @@ class Window:
             # Добавляем область для рисования (drawlist) на этой вкладке
             with dpg.drawlist(width=W, height=H, tag=self.drawlist_id):
                 with dpg.draw_layer( parent=self.drawlist_id, tag=self.draw_layer_id):
-                    with dpg.draw_node(parent=self.draw_layer_id, tag=self.current_model.draw_node_id):
-                        self.current_model.set_pos([W//8, H//4])
+                    with dpg.draw_node(parent=self.draw_layer_id, tag=self.current_model.draw_node_id) as f:
+                        self.current_model.set_pos(Vector(W//8, H//4, 0))
                         self.draw_model()
                         
         dpg.delete_item("file_dialog_id")
 
+    def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
+        """Рекурсивное построение дерева с элементами редактирования"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                new_path = f"{path}.{key}" if path else key
+                if isinstance(value, (dict, list)):
+                    with dpg.tree_node(label=key, parent=parent):
+                        self._build_editable_tree(parent, value, new_path)
+                else:
+                    self._add_editable_field(parent, key, value, new_path)
+
+        elif isinstance(data, list):
+            for idx, item in enumerate(data):
+                new_path = f"{path}[{idx}]"
+                if isinstance(item, (dict, list)):
+                    with dpg.tree_node(label=f"Item {item.index}", parent=parent):
+                        self._build_editable_tree(parent, item, new_path)
+                else:
+                    self._add_editable_field(parent, item, new_path)
+
+    def _add_editable_field(self, parent: str, value: Any, path: str):
+        """Добавление поля с возможностью редактирования"""
+        with dpg.group(horizontal=True, parent=parent):
+            if isinstance(value, Node):
+                with dpg.group(horizontal=True):
+                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+
+                    for i, num in enumerate(value.point.asList()):
+                        dpg.add_input_float(
+                            default_value=num,
+                            # tag=f"{path}[{i}]",
+                            width=100,
+                            callback=self._update_data
+                        )
+                        
+            elif isinstance(value, Element):
+                with dpg.group(horizontal=True):
+                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    with dpg.group(horizontal=False):
+                        dpg.add_text(f"Start Node:")
+
+                        dpg.add_input_int(
+                            label="fucks",
+                            default_value=value.start_node.id,
+                            tag=f"Node.{value.id}.start_node.id",
+                            width=150,
+                            callback=self._update_data
+                        )
+                        dpg.add_text(f"End Node:")
+
+                        dpg.add_input_int(
+                            default_value=value.end_node.id,
+                            # tag=f"{path}",
+                            width=150,
+                            callback=self._update_data
+                        )
+                        dpg.add_text(f"Material:")
+
+                        dpg.add_input_text(
+                            default_value=str(value.material),
+                            # tag=path,
+                            width=200,
+                            callback=self._update_data
+                        )
+                        
+            elif isinstance(value, (Fixed, Roller, Pinned)):
+                with dpg.group(horizontal=True):
+                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    with dpg.group(horizontal=False):
+                        dpg.add_text(f"Node:")
+
+                        dpg.add_input_int(
+                            default_value=value.node.id,
+                            # tag=f"{path}",
+                            width=150,
+                            callback=self._update_data
+                        )
+                        dpg.add_text(f"Direction:")
+                        with dpg.group(horizontal=True):
+                            for i, num in enumerate(value.direction.asList()):
+                                dpg.add_input_float(
+                                    default_value=num,
+                                    # tag=f"{path}[{i}]",
+                                    width=150,
+                                    callback=self._update_data
+                                )
+            elif isinstance(value, (Force, Momentum)):
+                with dpg.group(horizontal=True):
+                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    with dpg.group(horizontal=False):
+                        dpg.add_text(f"Node:")
+
+                        dpg.add_input_int(
+                            default_value=value.node.id,
+                            # tag=f"{path}",
+                            width=150,
+                            callback=self._update_data
+                        )
+                        dpg.add_text(f"Direction:")
+                        with dpg.group(horizontal=True):
+                            for i, num in enumerate(value.direction.asList()):
+                                dpg.add_input_float(
+                                    default_value=num,
+                                    # tag=f"{path}[{i}]",
+                                    width=150,
+                                    callback=self._update_data
+                                )
+            elif isinstance(value, DistributedForce):
+                with dpg.group(horizontal=True):
+                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    with dpg.group(horizontal=False):
+                        dpg.add_text(f"Node:")
+
+                        dpg.add_input_int(
+                            default_value=value.node.id,
+                            # tag=f"{path}",
+                            width=150,
+                            callback=self._update_data
+                        )
+                        dpg.add_text(f"Direction:")
+                        with dpg.group(horizontal=True):
+                            for i, num in enumerate(value.direction.asList()):
+                                dpg.add_input_float(
+                                    default_value=num,
+                                    # tag=f"{path}[{i}]",
+                                    width=150,
+                                    callback=self._update_data
+                                )
+                                
+                        dpg.add_text(f"Lenght:")
+                        dpg.add_input_float(
+                            default_value=value.lenght,
+                            # tag=f"{path}",
+                            width=150,
+                            callback=self._update_data
+                        )
+    def _update_data(self, sender, app_data):
+        """Обновление данных при изменении значений"""
+        path = dpg.get_item_label(sender)
+        print(path)
+        try:
+            # Находим нужный элемент в структуре данных
+            keys = path.split('.')
+            current = self.current_model.data
+            
+            for key in keys[:-1]:
+                if '[' in key:
+                    # Обработка индексов массивов
+                    base = key.split('[')[0]
+                    idx = int(key.split('[')[1].rstrip(']'))
+                    current = current[base][idx]
+                else:
+                    current = current[key]
+            
+            # Устанавливаем новое значение
+            last_key = keys[-1]
+            if '[' in last_key:
+                base = last_key.split('[')[0]
+                idx = int(last_key.split('[')[1].rstrip(']'))
+                current[base][idx] = app_data
+            else:
+                current[last_key] = app_data
+
+        except Exception as e:
+            print(f"Error updating {path}: {e}")
+       
     def setup(self):
-        
-        
         # Основное окно
-        with dpg.window(label="Build v0.0.4", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.6", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
+                    dpg.add_menu_item(label="Save", callback=self._update_data)
+                    dpg.add_menu_item(label="Save As", callback=self.callback)
+
 
                 with dpg.menu(label="Calculate"):
                     dpg.add_menu_item(label="Run", callback=self.calculate)
@@ -288,20 +413,34 @@ class Window:
             with dpg.group(horizontal=True):
 
                 # Левый блок — Канвас
-                with dpg.child_window(width=W//1, height=H):
+                with dpg.child_window(width=W//2, height=H):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
-                        pass
-
+                        if DEFAULT: # исключительно в тестовых целях
+                            self.current_model = Model()
+                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model2.mdl")
+                            self.models.update({self.current_model.name: self.current_model})
+                            self.create_tab(self.current_model.name)
+                        
                 # Правый блок — Инспектор
-                with dpg.child_window(width=W//2, height=H):
-                    dpg.add_text("Inspector")
-                    dpg.add_text("Selected Node:", tag="node_id_text")
-                    dpg.add_input_int(label="X", tag="x_coord", callback=self.callback)
-                    dpg.add_input_int(label="Y", tag="y_coord", callback=self.callback)
+                # data = {self.current_model.name: self.current_model.data}
+                with dpg.child_window(width=W//1, height=H):
+                    self._build_editable_tree("##dynamic_tree_root", self.current_model.data)
+                    
+                dpg.add_text("Inspector")
+                dpg.add_text("Selected Node:", tag="node_id_text")
+                dpg.add_input_int(label="X", tag="x_coord", callback=self.callback)
+                dpg.add_input_int(label="Y", tag="y_coord", callback=self.callback)
+        # Регистрируем шрифт
+        with dpg.font_registry():
+            # Первый параметр - размер, второй - путь к файлу шрифта
+            default_font = dpg.add_font("/home/denour/Develop/cpp/fps/assets/font/arial.ttf", 16)
 
+        # Устанавливаем шрифт по умолчанию для всех элементов
+        dpg.bind_font(default_font)
+        
         with dpg.handler_registry():
-            dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
+            # dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
 
             dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
             dpg.add_mouse_wheel_handler(callback=self.mouse_wheel_handler)

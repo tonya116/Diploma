@@ -1,31 +1,52 @@
-﻿# from scipy.sparse.linalg import spsolve
-# from scipy.sparse import coo_matrix
-import numpy as np
-# Дано: балка длиной 6 м, нагрузка P = 20 кН в середине
-L = 6.0
-P = 20.0
-EI = 1000
+﻿import dearpygui.dearpygui as dpg
 
-# Разбиваем на 2 элемента по 3 м
-nodes = [0, 3, 6]
-elem = [(0, 1), (1, 2)]
+dpg.create_context()
+dpg.create_viewport(width=800, height=600, title="Выделение элементов")
 
-# Матрица жесткости для балки (2D: вертикальное смещение + угол)
-K_local = EI / (3**3) * np.array([
-    [12, 6*3, -12, 6*3],
-    [6*3, 4*3**2, -6*3, 2*3**2],
-    [-12, -6*3, 12, -6*3],
-    [6*3, 2*3**2, -6*3, 4*3**2]
-])
+selected_item = None
+drawing_elements = []
 
-# Сборка глобальной матрицы (здесь упрощенно)
-K_global = np.zeros((4, 4))
-K_global[:2, :2] += K_local[:2, :2]
-K_global[2:, 2:] += K_local[2:, 2:]
+def is_point_near_line(mouse_pos, p1, p2, threshold=5):
+    # Проверяем, находится ли точка рядом с линией (упрощенная версия)
+    x, y = mouse_pos
+    x1, y1 = p1
+    x2, y2 = p2
+    distance = abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / ((y2 - y1)**2 + (x2 - x1)**2)**0.5
+    return distance < threshold
 
-# Вектор нагрузки (сила P в середине)
-F = np.array([0, 0, -P, 0])
+def mouse_click_callback(sender, app_data):
+    global selected_item
+    mouse_pos = dpg.get_mouse_pos(local=False)
+    
+    for elem in drawing_elements:
+        elem_type = dpg.get_item_type(elem["id"])
+        
+        if elem_type == "mvAppItemType::mvDrawLine":
+            p1 = dpg.get_item_configuration(elem["id"])["p1"]
+            p2 = dpg.get_item_configuration(elem["id"])["p2"]
+            if is_point_near_line(mouse_pos, p1, p2):
+                if selected_item:
+                    dpg.configure_item(selected_item, color=(255, 255, 255))
+                selected_item = elem["id"]
+                dpg.configure_item(selected_item, color=(255, 0, 0))
+                break
 
-# Решение системы
-U = np.linalg.solve(K_global, F)
-print(f"Прогиб в середине: {U[2]:.4f} м")
+def add_draw_elements():
+    with dpg.window(label="Draw Area", width=600, height=500):
+        with dpg.drawlist(width=550, height=450):
+            line_id = dpg.draw_line((50, 50), (200, 200), color=(255, 255, 255), thickness=2)
+            drawing_elements.append({"id": line_id, "type": "line"})
+            
+            # Можно добавить другие элементы (круги, прямоугольники)
+            
+        # Регистрируем обработчик клика на весь холст
+        with dpg.item_handler_registry(tag="mouse_click_handler"):
+            dpg.add_mouse_click_handler(callback=mouse_click_callback)
+        dpg.bind_item_handler_registry(dpg.last_item(), "mouse_click_handler")
+
+add_draw_elements()
+
+dpg.setup_dearpygui()
+dpg.show_viewport()
+dpg.start_dearpygui()
+dpg.destroy_context()

@@ -1,34 +1,33 @@
-﻿import configparser
-import os
+﻿
 import numpy as np
 from Geometry.Vector import Vector
 from Geometry.Point import Point
-from Geometry.Arrow import Arrow
+from Geometry.Primitives.Arrow import Arrow
+from Geometry.Matrix import TranslationMatrix
+from config import config
+from Entities.node import Node
+from .object import Object
 
-# Создаём парсер
-config = configparser.ConfigParser()
-
-# Читаем файл
-config.read(os.getcwd() + "/python/config.ini")
-
-def setting(key):
-    return config['DEFAULT'].get(key)
-
-
-class Force:
-    def __init__(self, point: Point, direction: Vector):
-        self.point = point
+class Force(Object):
+    def __init__(self, id: int, node:Node, direction: Vector):
+        super().__init__(id)
+        self.node = node
         self.direction = direction
-        self.force = np.linalg.norm(self.direction.asList())
+        self.force:float = np.linalg.norm(self.direction.asList())
         self.primitives = []
-
+        self.ctrlPoints:list[Point] = [Point(), Point(1, 0, 0)]
 
     def __str__(self):
-        return f"Point: {self.point}, Direction: {self.direction}, Force: {self.force}"
+        return f"Node: {self.node}, Direction: {self.direction}, Force: {self.force}"
 
     def __repr__(self):
-        print(f"Point: {self.point}, Direction: {self.direction}, Force: {self.force}")
+        print(f"Node: {self.node}, Direction: {self.direction}, Force: {self.force}")
         
     def geometry(self):
-        self.primitives.append(Arrow(self.point.asList(), (self.point+self.direction).asList(), eval(setting("ForceColor")), 5))
+        mt = TranslationMatrix(self.node.point)
+        for i in range(len(self.ctrlPoints)):
+            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
+                    
+        self.primitives.append(Arrow(self.ctrlPoints[0], self.ctrlPoints[1], eval(config("ForceColor")), 5))
+
         return self.primitives
