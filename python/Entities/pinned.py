@@ -11,8 +11,8 @@ from Geometry.Primitives.Circle import Circle
 from config import config
 
 class Pinned(Support):
-    def __init__(self, node:Node, direction: Vector):
-        super().__init__(node, direction)
+    def __init__(self, id:int, node:Node, direction: Vector):
+        super().__init__(id, node, direction)
         self.primitives = []
         self.ctrlPoints:list[Point] = []
         

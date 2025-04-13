@@ -10,8 +10,8 @@ from Geometry.Primitives.Line import Line
 from config import config
 
 class Fixed(Support):
-    def __init__(self, node:Node, direction: Vector):
-        super().__init__(node, direction)
+    def __init__(self, id, node:Node, direction: Vector):
+        super().__init__(id, node, direction)
         self.primitives = []
         self.ctrlPoints:list[Point] = []
         self.ctrlPoints.append(Point(-2, 0, 0))

@@ -65,6 +65,7 @@
     },
     "loads": [
         {
+            "id": 1,
             "node": 2,
             "type": "force",
             "direction": [
@@ -74,6 +75,7 @@
             ]
         },
         {
+            "id": 2,
             "node": 4,
             "type": "distributed_force",
             "lenght": 3,
@@ -84,6 +86,7 @@
             ]
         },
         {
+            "id": 3,
             "node": 5,
             "type": "momentum",
             "momentum": [

@@ -9,7 +9,8 @@ from .node import Node
 from .element import Element
 
 class DistributedForce:
-    def __init__(self, node:Node, direction: Vector, lenght: float):
+    def __init__(self, id:int, node:Node, direction: Vector, lenght: float):
+        self.id = id
         self.node: Node = node
         self.direction = direction
         self.lenght = lenght
@@ -26,7 +27,7 @@ class DistributedForce:
             self.ctrlPoints.append(Point(i * step, -2, 0))
             
     def __str__(self):
-        return f"Element: {self.element}, Offset: {self.offset}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
+        return f"Element: {self.node}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
 
     def __repr__(self):
         print(self.__str__())
