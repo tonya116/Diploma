@@ -66,7 +66,19 @@ class Model:
         with open(filename, "r", encoding="utf-8-sig") as file:
             self.data = json.load(file)
         self.__parse_model()
-
+        
+        dsd = -3
+        
+        for sup in self.supports:
+            if isinstance(sup, Fixed):
+                dsd += 3
+            elif isinstance(sup, Pinned):
+                dsd += 2
+            elif isinstance(sup, Roller):
+                dsd += 1
+        
+        print(f"Степень статической неопределимости: {dsd}")
+        
     def __parse_model(self):
 
         for node in self.data.get("nodes"):
