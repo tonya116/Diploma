@@ -24,6 +24,8 @@ class Element(Object):
         print(self.__str__())
         
     def geometry(self):
+        self.primitives.clear()
+
         # Трансляция
         self.ctrlPoints[0] = self.start_node.point
         self.ctrlPoints[1] = self.end_node.point

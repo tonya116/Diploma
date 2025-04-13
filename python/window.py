@@ -369,7 +369,7 @@ class Window:
                         )
     def _update_data(self, sender, app_data):
         """Обновление данных при изменении значений"""
-        path = dpg.get_item_label(sender)
+        path = dpg.get_item_info(sender)
         print(path)
         try:
             # Находим нужный элемент в структуре данных

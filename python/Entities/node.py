@@ -10,8 +10,7 @@ class Node(Object):
     def __init__(self, id, point:Point):
         super().__init__(id)
         self.point = point
-        self.primitives = []
-        self.ctrlPoints:list[Point] = [Point()]
+        self.ctrlPoints.append(Point())
 
     def __str__(self):
         return f"ID: {self.id}, Point: {self.point}"
@@ -20,6 +19,8 @@ class Node(Object):
         print(self.__str__())
     
     def geometry(self):
+        self.primitives.clear()
+
         mt = TranslationMatrix(self.point)
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
