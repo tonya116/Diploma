@@ -12,6 +12,8 @@ from config import config
 class Fixed(Support):
     def __init__(self, id, node:Node, direction: Vector):
         super().__init__(id, node, direction)
+        self.dof = 3
+
         self.primitives = []
         self.ctrlPoints:list[Point] = []
         self.ctrlPoints.append(Point(-2, 0, 0))

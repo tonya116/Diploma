@@ -4,10 +4,11 @@ from Geometry.Point import Point
 from Geometry.Primitives.Entity import Entity
 from config import config
 from Entities.node import Node
+from .object import Object
 
-class Support:
+class Support(Object):
     def __init__(self, id:int, node:Node, direction: Vector):
-        self.id = id
+        super().__init__(id)
         self.node = node
         self.direction = direction
 

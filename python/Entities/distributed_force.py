@@ -7,16 +7,15 @@ from config import config
 from Geometry.Matrix import RotationMatrix, TranslationMatrix
 from .node import Node
 from .element import Element
-
-class DistributedForce:
+from .object import Object
+class DistributedForce(Object):
     def __init__(self, id:int, node:Node, direction: Vector, lenght: float):
-        self.id = id
+        super().__init__(id)
         self.node: Node = node
         self.direction = direction
         self.lenght = lenght
         self.force = self.direction.norm()
-        self.primitives = []
-        self.ctrlPoints:list[Point] = []
+
         self.ctrlPoints.append(Point(-self.lenght/2, -2, 0))
         self.ctrlPoints.append(Point(self.lenght/2, -2, 0))
         
@@ -39,7 +38,6 @@ class DistributedForce:
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
-            print(self.ctrlPoints[i])
             
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))
 

@@ -4,10 +4,11 @@ from Geometry.Point import Point
 from Geometry.Primitives.Circle import Circle
 from config import config
 from Geometry.Matrix import TranslationMatrix
+from .object import Object
 
-class Node:
+class Node(Object):
     def __init__(self, id, point:Point):
-        self.id = id
+        super().__init__(id)
         self.point = point
         self.primitives = []
         self.ctrlPoints:list[Point] = [Point()]

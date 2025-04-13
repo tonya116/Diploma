@@ -66,6 +66,9 @@ class Window:
         
         if self.current_model:
             dx, dy = dpg.get_mouse_drag_delta()
+            self.current_model.rotate_x(dx/100)
+            self.current_model.rotate_y(dy/100)
+
             # self.current_model.set_pos(Vector(dx/2 - W//2, dy/2 - H//2, 0))
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
@@ -178,14 +181,15 @@ class Window:
         print(f"Active tab: {app_data}")
 
     def calculate(self):
-        callback_type = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double)
-        callback_ptr = callback_type(f)
-        # Путь к скомпилированной C++ библиотеке
-        lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
-        calculations = ctypes.CDLL(lib_path)
-        calculations.integral.argtypes = [callback_ptr, ctypes.c_int, ctypes.c_int]
-        calculations.integral.restype = ctypes.c_double
-        calculations.integral(callback_ptr, 0, 10)
+        pass
+        # callback_type = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double)
+        # callback_ptr = callback_type()
+        # # Путь к скомпилированной C++ библиотеке
+        # lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
+        # calculations = ctypes.CDLL(lib_path)
+        # calculations.integral.argtypes = [callback_ptr, ctypes.c_int, ctypes.c_int]
+        # calculations.integral.restype = ctypes.c_double
+        # calculations.integral(callback_ptr, 0, 10)
 
         # calculations.destroyMatrix.argtypes = [ctypes.c_void_p]
 
@@ -253,15 +257,14 @@ class Window:
             if isinstance(value, Node):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
-                    with dpg.group(horizontal=False):
 
-                        for i, num in enumerate(value.point.asList()):
-                            dpg.add_input_float(
-                                default_value=num,
-                                # tag=f"{path}[{i}]",
-                                width=100,
-                                callback=self._update_data
-                            )
+                    for i, num in enumerate(value.point.asList()):
+                        dpg.add_input_float(
+                            default_value=num,
+                            # tag=f"{path}[{i}]",
+                            width=100,
+                            callback=self._update_data
+                        )
                         
             elif isinstance(value, Element):
                 with dpg.group(horizontal=True):
@@ -270,8 +273,9 @@ class Window:
                         dpg.add_text(f"Start Node:")
 
                         dpg.add_input_int(
+                            label="fucks",
                             default_value=value.start_node.id,
-                            # tag=f"{path}",
+                            tag=f"Node.{value.id}.start_node.id",
                             width=150,
                             callback=self._update_data
                         )
@@ -366,10 +370,11 @@ class Window:
     def _update_data(self, sender, app_data):
         """Обновление данных при изменении значений"""
         path = dpg.get_item_label(sender)
+        print(path)
         try:
             # Находим нужный элемент в структуре данных
             keys = path.split('.')
-            current = self.data
+            current = self.current_model.data
             
             for key in keys[:-1]:
                 if '[' in key:
@@ -394,7 +399,7 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.5", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.6", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
@@ -435,7 +440,7 @@ class Window:
         dpg.bind_font(default_font)
         
         with dpg.handler_registry():
-            dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
+            # dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
 
             dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
             dpg.add_mouse_wheel_handler(callback=self.mouse_wheel_handler)

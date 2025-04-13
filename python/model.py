@@ -29,6 +29,7 @@ class Model:
         self.scale = 1
         
         self.data = {}
+        self.dsi = -3
        
         self.name = None
         
@@ -63,21 +64,13 @@ class Model:
         with open(filename, "r", encoding="utf-8-sig") as file:
             data = json.load(file)
         self.__parse_model(data)
-        
-        dsd = -3
-        
+                
         for sup in self.data.get("supports"):
-            if isinstance(sup, Fixed):
-                dsd += 3
-            elif isinstance(sup, Pinned):
-                dsd += 2
-            elif isinstance(sup, Roller):
-                dsd += 1
+            self.dsi += sup.dof
         
-        print(f"Степень статической неопределимости: {dsd}")
+        print(f"Степень статической неопределимости: {self.dsi}")
         
     def __parse_model(self, data:dict):
-        print(data)
         nodes = []
         elements = []
         loads = []

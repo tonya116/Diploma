@@ -6,10 +6,11 @@ from Geometry.Primitives.Arrow import Arrow
 from Geometry.Matrix import TranslationMatrix
 from config import config
 from Entities.node import Node
+from .object import Object
 
-class Force:
+class Force(Object):
     def __init__(self, id: int, node:Node, direction: Vector):
-        self.id = id
+        super().__init__(id)
         self.node = node
         self.direction = direction
         self.force:float = np.linalg.norm(self.direction.asList())

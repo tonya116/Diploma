@@ -7,10 +7,11 @@ from Geometry.Matrix import TranslationMatrix
 from .node import Node
 
 from config import config
+from .object import Object
 
-class Momentum:
+class Momentum(Object):
     def __init__(self, id:int, node:Node, direction: Vector):
-        self.id = id
+        super().__init__(id)
         self.node: Node = node
         self.direction = direction
         self.force = np.linalg.norm(self.direction.asList())

@@ -13,6 +13,8 @@ from config import config
 class Pinned(Support):
     def __init__(self, id:int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
+        self.dof = 2
+
         self.primitives = []
         self.ctrlPoints:list[Point] = []
         
