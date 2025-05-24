@@ -171,7 +171,6 @@ Matrix Matrix::operator*(Matrix other) {
   return resultMatrix;
 }
 
-
 Matrix Matrix::operator*(double scalar) {
   Matrix resultMatrix(_n, _m);
   for (int i = 0; i < _m; i++) {
@@ -240,12 +239,5 @@ Matrix &Matrix::operator+=(Matrix other) {
   return *this;
 }
 
-// Matrix Matrix::fromFlatArray(double *data, int rows, int cols) {
-//   Matrix mat(rows, cols);
-//   for (int i = 0; i < rows; i++) {
-//     for (int j = 0; j < cols; j++) {
-//       mat._matrix[i][j] = data[i * cols + j];
-//     }
-//   }
-//   return mat;
-// }
+void Matrix::set(int row, int col, double value) { _matrix[row][col] = value; }
+double Matrix::get(int row, int col) const { return _matrix[row][col]; }

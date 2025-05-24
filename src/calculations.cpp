@@ -50,12 +50,8 @@ extern "C" void reactions_calc(double &RA, double &RB, const double L) {
 }
 
 extern "C" void diagram_calc(double L, double *x, size_t size, double *V,
-                             double *M) {
+                             double *M, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments) {
   double v, m;
-
-  std::vector<std::vector<double>> point_loads = {{4, -30}};
-  std::vector<std::vector<double>> distributed_loads = {{0, 2, -10}};
-  std::vector<std::vector<double>> moments = {{2, 20}};
 
   double RA = 0, RB = 0;
   reactions_calc(RA, RB, L);
@@ -63,13 +59,13 @@ extern "C" void diagram_calc(double L, double *x, size_t size, double *V,
   for (int i = 0; i < size; i++) {
     v = RA;
     m = RA * x[i];
-    for (auto &force : point_loads) {
+    for (auto &force : point_loads->_matrix) {
       if (x[i] >= force[0]) {
         v += force[1];
         m += force[1] * (x[i] - force[0]);
       }
     }
-    for (auto &dl : distributed_loads) {
+    for (auto &dl : distributed_loads->_matrix) {
       if (x[i] >= dl[0]) {
         if (x[i] <= dl[1]) {
           v += dl[2] * (x[i] - dl[0]);
@@ -80,7 +76,7 @@ extern "C" void diagram_calc(double L, double *x, size_t size, double *V,
         }
       }
     }
-    for (auto &moment : moments) {
+    for (auto &moment : moments->_matrix) {
 
       if (x[i] >= moment[0]) {
         m += -moment[1];
@@ -92,12 +88,19 @@ extern "C" void diagram_calc(double L, double *x, size_t size, double *V,
   }
 }
 
-// extern "C" void* create_matrix_from_array(double* data, int rows, int cols) {
-//     Matrix* mat = new Matrix();
-//     *mat = mat->fromFlatArray(data, rows, cols);
-//     return static_cast<void*>(mat);
-// }
+extern "C" void* Matrix_create(int rows, int cols) {
+    Matrix* mat = new Matrix(rows, cols);
+    return static_cast<void*>(mat);
+}
 
-// extern "C" void delete_matrix(void* matrix) {
-//     delete static_cast<Matrix*>(matrix);
-// }
+extern "C" void Matrix_destroy(void* matrix) {
+    delete static_cast<Matrix*>(matrix);
+}
+
+extern "C" void Matrix_set(Matrix* mat, int row, int col, double value) {
+  mat->set(row, col, value);
+}
+
+extern "C" double Matrix_get(Matrix* mat, int row, int col) {
+  return mat->get(row, col);
+}
