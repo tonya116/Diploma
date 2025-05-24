@@ -1,52 +1,45 @@
-﻿import dearpygui.dearpygui as dpg
+﻿import numpy as np
+import matplotlib.pyplot as plt
 
-dpg.create_context()
-dpg.create_viewport(width=800, height=600, title="Выделение элементов")
+# Параметры балки
+L = 4  # длина балки, м
+P = 10  # сила, кН
+a = 3  # расстояние до силы от левой опоры
 
-selected_item = None
-drawing_elements = []
+# Реакции опор (по уравнениям равновесия)
+RA = P * (L - a) / L  # реакция в A
+RB = P * a / L        # реакция в B
 
-def is_point_near_line(mouse_pos, p1, p2, threshold=5):
-    # Проверяем, находится ли точка рядом с линией (упрощенная версия)
-    x, y = mouse_pos
-    x1, y1 = p1
-    x2, y2 = p2
-    distance = abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / ((y2 - y1)**2 + (x2 - x1)**2)**0.5
-    return distance < threshold
+# Координаты по длине балки
+x = np.linspace(0, L, 500)
 
-def mouse_click_callback(sender, app_data):
-    global selected_item
-    mouse_pos = dpg.get_mouse_pos(local=False)
-    
-    for elem in drawing_elements:
-        elem_type = dpg.get_item_type(elem["id"])
-        
-        if elem_type == "mvAppItemType::mvDrawLine":
-            p1 = dpg.get_item_configuration(elem["id"])["p1"]
-            p2 = dpg.get_item_configuration(elem["id"])["p2"]
-            if is_point_near_line(mouse_pos, p1, p2):
-                if selected_item:
-                    dpg.configure_item(selected_item, color=(255, 255, 255))
-                selected_item = elem["id"]
-                dpg.configure_item(selected_item, color=(255, 0, 0))
-                break
+# Поперечная сила V(x)
+V = np.piecewise(x, [x < a, x >= a], [lambda x: RA, lambda x: RA - P])
 
-def add_draw_elements():
-    with dpg.window(label="Draw Area", width=600, height=500):
-        with dpg.drawlist(width=550, height=450):
-            line_id = dpg.draw_line((50, 50), (200, 200), color=(255, 255, 255), thickness=2)
-            drawing_elements.append({"id": line_id, "type": "line"})
-            
-            # Можно добавить другие элементы (круги, прямоугольники)
-            
-        # Регистрируем обработчик клика на весь холст
-        with dpg.item_handler_registry(tag="mouse_click_handler"):
-            dpg.add_mouse_click_handler(callback=mouse_click_callback)
-        dpg.bind_item_handler_registry(dpg.last_item(), "mouse_click_handler")
+# Изгибающий момент M(x)
+M = np.piecewise(x, [x < a, x >= a],
+                 [lambda x: RA * x,
+                  lambda x: RA * x - P * (x - a)])
 
-add_draw_elements()
+# Построение графиков
+plt.figure(figsize=(12, 6))
 
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
+plt.subplot(2, 1, 1)
+plt.plot(x, V, label='Поперечная сила V(x)', color='blue')
+plt.axhline(0, color='black', linewidth=0.5)
+plt.title('Эпюра поперечных сил')
+plt.ylabel('V, кН')
+plt.grid(True)
+plt.legend()
+
+plt.subplot(2, 1, 2)
+plt.plot(x, M, label='Изгибающий момент M(x)', color='red')
+plt.axhline(0, color='black', linewidth=0.5)
+plt.title('Эпюра изгибающих моментов')
+plt.xlabel('x, м')
+plt.ylabel('M, кН·м')
+plt.grid(True)
+plt.legend()
+
+plt.tight_layout()
+plt.show()
