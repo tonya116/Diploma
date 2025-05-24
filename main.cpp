@@ -10,16 +10,12 @@ double f(double x){
 
 int main() {
 
+  
+  Matrix point_loads = {{4, -30}};
+  Matrix distributed_loads = {{0, 2, -10}};
+  Matrix moments = {{2, 20}};
 
-  double d11 = 5.33/5;
-  double D1p = -15/5;
-  std::cout << -D1p / d11;
-  Matrix A = {{5.33/5}};
 
-  Matrix B = {{-15/5}};
-  A.getInverse().logMatrix();
-  Matrix C = A.getInverse() * (B * -1);
-  C.logMatrix();
 
   return 0;
 }
