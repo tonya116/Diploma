@@ -14,6 +14,8 @@ public:
   Matrix(int n, int m);
   Matrix(std::initializer_list<std::initializer_list<double>> init);
 
+  // Добавляем метод для создания матрицы из C-массива
+  // static Matrix fromFlatArray(double *data, int rows, int cols);
   void logMatrix();
   bool dimEqual(Matrix other);
   void transpose();
