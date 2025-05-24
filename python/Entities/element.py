@@ -8,12 +8,12 @@ from .object import Object
 from config import config
 
 class Element(Object):
-    def __init__(self, id, start_node, end_node, type, material):
+    def __init__(self, id, start_node:Node, end_node:Node, type:str, material:str):
         super().__init__(id)
         self.start_node:Node = start_node
         self.end_node:Node = end_node
-        self.type = type
-        self.material = material
+        self.type:str = type
+        self.material:str = material
         self.ctrlPoints.append(Point())
         self.ctrlPoints.append(Point(1, 0, 0))
 
@@ -21,9 +21,14 @@ class Element(Object):
         return f"Id: {self.id}, Start node: {self.start_node}, End node: {self.end_node}, Type: {self.type}, Material: {self.material}"
 
     def __repr__(self):
-        print(self.__str__())
-        
+        return super().__dict__().update(self.__dict__())
+         
+    def __dict__(self):
+        return {"start_node": self.start_node.id, "end_node": self.end_node.id, "type": self.type, "material": self.material}
+    
     def geometry(self):
+        self.primitives.clear()
+
         # Трансляция
         self.ctrlPoints[0] = self.start_node.point
         self.ctrlPoints[1] = self.end_node.point

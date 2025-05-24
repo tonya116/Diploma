@@ -2,10 +2,11 @@
 import math
 import os
 from dearpygui import dearpygui as dpg
+from pydantic import BaseModel
 from Entities.force import Force
 from Entities.distributed_force import DistributedForce
 
-from Entities.node import Node
+from Entities.node import Node, NodeModel
 from Entities.element import Element
 from Entities.fixed import Fixed
 from Entities.pinned import Pinned
@@ -15,6 +16,7 @@ from Entities.momentum import Momentum
 
 from Geometry.Vector import Vector
 from Geometry.Point import Point
+
 
 class Model:
     def __init__(self):
@@ -32,9 +34,10 @@ class Model:
         self.dsi = -3
        
         self.name = None
-        
+        self.filename = None
         self.draw_node_id = dpg.generate_uuid()
-
+        self.diagrams = []
+        
         self.proj = dpg.create_orthographic_matrix(0, 1, 0, 1, 0, 1)
 
     def move(self, delta: Vector):
@@ -58,9 +61,16 @@ class Model:
         self.z_rot += angle
 
     def load_model(self, filename:str):
-        
+        self.filename = filename
         # TODO Надо бы переписать передачу имени файла
-        self.name = filename.split("/")[-1][:-4]
+        self.name = filename.split("/")[-1][:-4]        
+        # Создаем экземпляр Node
+        point = Point(x=10, y=20)  # предположим, что Point принимает x и y
+        node = Node(id=1, point=point)
+        
+        # Преобразуем в Pydantic-модель и затем в JSON
+        node_model = node.to_pydantic()
+        
         with open(filename, "r", encoding="utf-8-sig") as file:
             data = json.load(file)
         self.__parse_model(data)
@@ -71,6 +81,7 @@ class Model:
         print(f"Степень статической неопределимости: {self.dsi}")
         
     def __parse_model(self, data:dict):
+        
         nodes = []
         elements = []
         loads = []
@@ -108,7 +119,21 @@ class Model:
                 supports.append(Roller(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
                 
         self.data.update({"supports": supports})
+        
+    def save_to_file(self, filename:str):
+        print(filename)
+        if not filename:
+            with open(self.filename, "w") as f:
+                # print(self.data.items())
+                
+                json.dump(self.data, f, default=__dict__, indent=5)
+            print(f"Write model to {self.filename}")
 
+        else:
+            with open(filename, "w") as f:
+                json.dump(self.data, f, indent=4)
+            print(f"Write model to {filename}")
+        
     def update(self):
         self.model_matrix = (
             

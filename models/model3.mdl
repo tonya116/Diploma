@@ -19,23 +19,23 @@
         {
             "id": 3,
             "coordinates": [
-                10,
-                10,
+                20,
+                0,
                 0
             ]
         },
         {
             "id": 4,
             "coordinates": [
-                10,
-                4,
+                40,
+                0,
                 0
             ]
         },
         {
             "id": 5,
             "coordinates": [
-                4,
+                60,
                 0,
                 0
             ]
@@ -55,6 +55,20 @@
             "end_node": 3,
             "type": "beam",
             "material": "steel"
+        },
+        {
+            "id": 3,
+            "start_node": 3,
+            "end_node": 4,
+            "type": "beam",
+            "material": "steel"
+        },
+        {
+            "id": 4,
+            "start_node": 4,
+            "end_node": 5,
+            "type": "beam",
+            "material": "steel"
         }
     ],
     "materials": {
@@ -66,8 +80,19 @@
     "loads": [
         {
             "id": 1,
-            "node": 2,
+            "node": 4,
             "type": "force",
+            "direction": [
+                0,
+                30,
+                0
+            ]
+        },
+        {
+            "id": 2,
+            "node": 2,
+            "type": "distributed_force",
+            "lenght": 20,
             "direction": [
                 0,
                 10,
@@ -76,22 +101,11 @@
         },
         {
             "id": 2,
-            "node": 4,
-            "type": "distributed_force",
-            "lenght": 3,
-            "direction": [
-                10,
-                0,
-                0
-            ]
-        },
-        {
-            "id": 3,
-            "node": 5,
+            "node": 3,
             "type": "momentum",
             "momentum": [
-                10,
                 0,
+                20,
                 0
             ]
         }
@@ -99,21 +113,15 @@
     "supports": [
         {
             "id": 1,
-            "node": 3,
-            "type": "fixed",
-            "direction": [1, 0, 0]
+            "node": 1,
+            "type": "pinned",
+            "direction": [0, 1, 0]
         },
         {
             "id": 2,
-            "node": 2,
-            "type": "pinned",
-            "direction": [1, 0, 0]
-        },
-        {
-            "id": 3,
-            "node": 1,
+            "node": 5,
             "type": "roller",
-            "direction": [0, -1, 0]
+            "direction": [0, 1, 0]
         }
     ]
 }

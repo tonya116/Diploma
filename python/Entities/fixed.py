@@ -14,15 +14,16 @@ class Fixed(Support):
         super().__init__(id, node, direction)
         self.dof = 3
 
-        self.primitives = []
-        self.ctrlPoints:list[Point] = []
-        self.ctrlPoints.append(Point(-2, 0, 0))
-        self.ctrlPoints.append(Point(2, 0, 0))
-        for i in range(-1, 3):
+        n = 2
+        self.ctrlPoints.append(Point(-n, 0, 0))
+        self.ctrlPoints.append(Point(n, 0, 0))
+        for i in range(-n//2, n+1):
             self.ctrlPoints.append(Point(i, 0, 0))
             self.ctrlPoints.append(Point(i-1, 1, 0))
 
     def geometry(self):
+        self.primitives.clear()
+
         mt = TranslationMatrix(self.node.point)
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt

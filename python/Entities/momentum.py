@@ -7,24 +7,21 @@ from Geometry.Matrix import TranslationMatrix
 from .node import Node
 
 from config import config
-from .object import Object
+from .load import Load
 
-class Momentum(Object):
+class Momentum(Load):
     def __init__(self, id:int, node:Node, direction: Vector):
-        super().__init__(id)
-        self.node: Node = node
-        self.direction = direction
-        self.force = np.linalg.norm(self.direction.asList())
-        self.primitives = []
-        self.ctrlPoints:list[Point] = [Point(0, -2, 0), Point(4, 0, 0), Point(0, 2, 0)]
+        super().__init__(id, node, direction)
+
+        self.ctrlPoints.append(Point(0, -2, 0))
+        self.ctrlPoints.append(Point(4, 0, 0))
+        self.ctrlPoints.append(Point(0, 2, 0))
 
     def __str__(self):
         return f"Node: {self.node}, Direction: {self.direction}, Momentum: {self.force}"
 
-    def __repr__(self):
-        print(self.__str__())
-
     def geometry(self):
+        self.primitives.clear()
 
         mt = TranslationMatrix(self.node.point)
         for i in range(len(self.ctrlPoints)):
