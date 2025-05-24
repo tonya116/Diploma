@@ -36,7 +36,8 @@ class Model:
         self.name = None
         self.filename = None
         self.draw_node_id = dpg.generate_uuid()
-
+        self.diagrams = []
+        
         self.proj = dpg.create_orthographic_matrix(0, 1, 0, 1, 0, 1)
 
     def move(self, delta: Vector):
