@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 
+
 class Matrix {
 public:
   int _n, _m;
@@ -10,6 +11,7 @@ public:
   std::vector<std::vector<double>> _matrix;
 
 public:
+  // Конструкторы
   Matrix() {}
   Matrix(int n, int m);
   Matrix(std::initializer_list<std::initializer_list<double>> init);
@@ -28,6 +30,9 @@ public:
   Matrix getInverse();
 
   void setIdentityMatrix();
+
+  void set(int row, int col, double value);
+  double get(int row, int col) const;
 
   Matrix operator*(Matrix other);
   void operator*=(Matrix other);
