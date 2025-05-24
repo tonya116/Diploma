@@ -239,3 +239,13 @@ Matrix &Matrix::operator+=(Matrix other) {
   }
   return *this;
 }
+
+// Matrix Matrix::fromFlatArray(double *data, int rows, int cols) {
+//   Matrix mat(rows, cols);
+//   for (int i = 0; i < rows; i++) {
+//     for (int j = 0; j < cols; j++) {
+//       mat._matrix[i][j] = data[i * cols + j];
+//     }
+//   }
+//   return mat;
+// }
