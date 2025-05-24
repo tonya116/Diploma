@@ -4,6 +4,7 @@ import os
 from typing import Any
 
 from dearpygui import dearpygui as dpg
+import numpy as np
 from model import Model
 from Geometry.Primitives.Circle import Circle
 from Geometry.Primitives.Line import Line
@@ -19,7 +20,7 @@ from Entities.roller import Roller
 from Entities.force import Force
 from Entities.distributed_force import DistributedForce
 from Entities.momentum import Momentum
-
+from Entities.diagrams import Diagram
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
@@ -149,6 +150,19 @@ class Window:
         if self.current_model:
             self.current_model.set_scale(self.current_model.get_scale() * (1.5**app_data))
 
+    def draw_diagrams(self, diagrams):
+                # Добавляем новую вкладку в tab_bar
+        with dpg.tab(label=self.current_model.name, parent="tab_bar"):
+            # Добавляем область для рисования (drawlist) на этой вкладке
+            with dpg.drawlist(width=W, height=H, tag=self.drawlist_id):
+                with dpg.draw_layer( parent=self.drawlist_id, tag=self.draw_layer_id):
+                    with dpg.draw_node(parent=self.draw_layer_id, tag=self.current_model.draw_node_id) as f:
+                        for prim in diagrams:
+                            if isinstance(prim, Circle):
+                                dpg.draw_circle(center=prim.pos, radius=prim.radius, color=prim.color, thickness=prim.thickness)
+                            elif isinstance(prim, Line):
+                                dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
+
     # Функция для отрисовки модели
     def draw_model(self):
         
@@ -181,24 +195,46 @@ class Window:
         print(f"Active tab: {app_data}")
 
     def calculate(self):
-        pass
-        # callback_type = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double)
-        # callback_ptr = callback_type()
-        # # Путь к скомпилированной C++ библиотеке
-        # lib_path = os.path.join(os.path.dirname(__file__), "../build/src/libcalculations.so")
-        # calculations = ctypes.CDLL(lib_path)
-        # calculations.integral.argtypes = [callback_ptr, ctypes.c_int, ctypes.c_int]
-        # calculations.integral.restype = ctypes.c_double
-        # calculations.integral(callback_ptr, 0, 10)
 
-        # calculations.destroyMatrix.argtypes = [ctypes.c_void_p]
+        L = 6  # длина балки, м
+        dx = 0.01
 
-        # calculations.getDeterminant.argtypes = [ctypes.c_void_p]
+        x = np.arange(0, L + dx, dx)
+        
+        # --- Нагрузки ---
+        point_loads = [[4, -30]]  # (позиция, сила в кН)
+        distributed_loads = [[0, 2, -10]]   # (от, до, q кН/м)
+        moments = [[2, 20]]                # (позиция, момент в кН·м), отриц — по часовой
 
-        # mat = calculations.createMatrix(5, 5)
-        # print(mat)
-        # Создаем массив данных
+        # Загружаем библиотеку
+        lib = ctypes.CDLL('build/src/libcalculations.so')
 
+        # Определяем типы аргументов и возвращаемого значения
+        lib.diagram_calc.argtypes = [
+            ctypes.c_double,                       # L
+            np.ctypeslib.ndpointer(dtype=np.float64),  # x
+            ctypes.c_size_t,                    # size
+            np.ctypeslib.ndpointer(dtype=np.float64),  # V
+            np.ctypeslib.ndpointer(dtype=np.float64)   # M
+        ]
+        lib.diagram_calc.restype = None
+        
+        # Подготавливаем массивы для результатов
+        V = np.zeros(x.size, dtype=np.float64)
+        M = np.zeros(x.size, dtype=np.float64)
+        # Вызываем функцию
+        lib.diagram_calc(L, x, x.size, V, M)
+                
+        diag = Diagram(-1, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[1], V)
+        diag2 = Diagram(0, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[1], M)
+
+        self.draw_diagrams(diag.geometry() + diag2.geometry())
+
+        s = sum(V) * dx
+        print(s)
+            
+
+        
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
         print("App Data: ", app_data)
@@ -261,7 +297,7 @@ class Window:
                     for i, num in enumerate(value.point.asList()):
                         dpg.add_input_float(
                             default_value=num,
-                            # tag=f"{path}[{i}]",
+                            tag=f"{path}[{i}]",
                             width=100,
                             callback=self._update_data
                         )
@@ -273,9 +309,8 @@ class Window:
                         dpg.add_text(f"Start Node:")
 
                         dpg.add_input_int(
-                            label="fucks",
                             default_value=value.start_node.id,
-                            tag=f"Node.{value.id}.start_node.id",
+                            # tag=f"Element.{value.id}.start_node.id",
                             width=150,
                             callback=self._update_data
                         )
@@ -283,7 +318,7 @@ class Window:
 
                         dpg.add_input_int(
                             default_value=value.end_node.id,
-                            # tag=f"{path}",
+                            tag=f"{path}",
                             width=150,
                             callback=self._update_data
                         )
@@ -367,10 +402,12 @@ class Window:
                             width=150,
                             callback=self._update_data
                         )
+    
     def _update_data(self, sender, app_data):
         """Обновление данных при изменении значений"""
-        path = dpg.get_item_label(sender)
-        print(path)
+        print(sender)
+        print(app_data)
+        path = sender
         try:
             # Находим нужный элемент в структуре данных
             keys = path.split('.')
@@ -397,15 +434,18 @@ class Window:
         except Exception as e:
             print(f"Error updating {path}: {e}")
        
+    def _save_to_file(self, sender, app_data, user_data:str = ""):
+        """Сохранение данных в файл"""
+        self.current_model.save_to_file(user_data)
+       
     def setup(self):
         # Основное окно
         with dpg.window(label="Build v0.0.6", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
-                    dpg.add_menu_item(label="Save", callback=self._update_data)
-                    dpg.add_menu_item(label="Save As", callback=self.callback)
-
+                    dpg.add_menu_item(label="Save", callback=self._save_to_file, user_data="")
+                    dpg.add_menu_item(label="Save As", callback=self._save_to_file)
 
                 with dpg.menu(label="Calculate"):
                     dpg.add_menu_item(label="Run", callback=self.calculate)
@@ -418,12 +458,12 @@ class Window:
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
                         if DEFAULT: # исключительно в тестовых целях
                             self.current_model = Model()
-                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model2.mdl")
+                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model3.mdl")
                             self.models.update({self.current_model.name: self.current_model})
                             self.create_tab(self.current_model.name)
                         
                 # Правый блок — Инспектор
-                # data = {self.current_model.name: self.current_model.data}
+                # Inspector()
                 with dpg.child_window(width=W//1, height=H):
                     self._build_editable_tree("##dynamic_tree_root", self.current_model.data)
                     

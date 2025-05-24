@@ -6,6 +6,8 @@ class Point:
         self.y = y
         self.z = z
         
+    def __dict__(self):
+        return [self.x, self.y, self.z]
     def __add__(self, other):
         tmp = Point(self.x, self.y, self.z)
         tmp.x += other.x
