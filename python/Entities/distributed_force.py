@@ -27,8 +27,11 @@ class DistributedForce(Load):
         return f"Element: {self.node}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
 
     def __repr__(self):
-        print(self.__str__())
-        
+        return super().__dict__().update(self.__dict__())
+         
+    def __dict__(self):
+        return {"lenght": self.lenght}
+    
     def geometry(self):
         self.primitives.clear()
 

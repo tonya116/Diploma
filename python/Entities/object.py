@@ -9,3 +9,6 @@ class Object:
         self.id = id
         self.primitives:list[Entity] = []
         self.ctrlPoints:list[Point] = []
+        
+    def __dict__(self):
+        return {"id": self.id}

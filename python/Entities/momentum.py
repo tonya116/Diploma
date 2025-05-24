@@ -20,9 +20,6 @@ class Momentum(Load):
     def __str__(self):
         return f"Node: {self.node}, Direction: {self.direction}, Momentum: {self.force}"
 
-    def __repr__(self):
-        print(self.__str__())
-
     def geometry(self):
         self.primitives.clear()
 

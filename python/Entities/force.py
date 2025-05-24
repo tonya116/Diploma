@@ -18,9 +18,6 @@ class Force(Load):
     def __str__(self):
         return f"Node: {self.node}, Direction: {self.direction}, Force: {self.force}"
 
-    def __repr__(self):
-        print(f"Node: {self.node}, Direction: {self.direction}, Force: {self.force}")
-        
     def geometry(self):
         self.primitives.clear()
 

@@ -19,5 +19,7 @@ class Load(Object):
         return f"Node: {self.node}, Direction: {self.direction}, Force: {self.force}"
 
     def __repr__(self):
-        print(f"Node: {self.node}, Direction: {self.direction}, Force: {self.force}")
-       
+        return super().__dict__().update(self.__dict__())
+         
+    def __dict__(self):
+        return {"node": self.node.id, "direction": self.direction.__dict__}
