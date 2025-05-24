@@ -14,12 +14,17 @@ class Diagram(Object):
 
     def geometry(self):
         self.primitives.clear()
-        print(len(self.diagram))
         for i, val in enumerate(self.diagram):
             if i == len(self.diagram) - 1:
                 break
             self.primitives.append(
-                Line([i / 10, -val, 0], [(i + 1) / 10, -self.diagram[i + 1], 0], (255, 255, 255), 1)
+                Line([i / 100, -val, 0], [(i + 1) / 100, -self.diagram[i + 1], 0], (255, 255, 255), 1)
             )
-
+        N = 50        
+        # Не оптимально
+        for i, val in enumerate(self.diagram):          
+            if i % N == 0:
+                self.primitives.append(
+                    Line([i / 100, -val, 0], [i / 100, 0, 0], (255, 255, 255), 3)
+                )
         return self.primitives

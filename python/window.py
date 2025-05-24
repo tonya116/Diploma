@@ -26,12 +26,164 @@ W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
 DEFAULT = True
 
+def draw(primitive, node_id):
+    if isinstance(primitive, Arrow):
+        dpg.draw_arrow(primitive.p1, primitive.p2,
+                            color=primitive.color,
+                            thickness=primitive.thickness, parent=node_id)
+    elif isinstance(primitive, Circle):
+        dpg.draw_circle(center=primitive.pos,
+                        radius=primitive.radius,
+                        color=primitive.color,
+                        thickness=primitive.thickness, parent=node_id)
+    elif isinstance(primitive, Line):
+        dpg.draw_line(primitive.p1, primitive.p2,
+                    color=primitive.color,
+                    thickness=primitive.thickness, parent=node_id)
+    elif isinstance(primitive, QBezier):
+        dpg.draw_bezier_quadratic(primitive.p1, primitive.p2, primitive.p3,
+                                    color=primitive.color,
+                                    thickness=primitive.thickness, parent=node_id)
+
+
+class Tab:
+    def __init__(self, model:Model):
+        
+        self.model = model
+        
+        self.model = model
+        self.drawlist_id = None
+        self.draw_layer_id = None
+        self.model.set_pos(Vector(W//8, H//4, 0))
+    
+    # Создаем вкладку и все дочерние элементы
+        with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
+            with dpg.drawlist(width=W, height=H, parent=self.tab_id) as self.drawlist_id:
+                with dpg.draw_layer(parent=self.drawlist_id) as self.draw_layer_id:
+                    with dpg.draw_node(parent=self.draw_layer_id) as self.model.draw_node_id:
+                        self.draw_model()                        
+
+    def draw_model(self):
+        # Очищаем предыдущие элементы
+        self.clear_model()
+        
+        if not self.model:
+            return
+        
+        self.model.update()
+    
+        for key, val in self.model.data.items():
+            for obj in val:
+                for prim in obj.geometry():
+                   draw(prim, self.model.draw_node_id)
+        # Отрисовка диаграмм
+        print("lol draw", self.model)
+        
+        # for diagram in self.model.diagrams:
+        
+    def clear_model(self):
+        """Удаляет все графические элементы модели"""
+        if dpg.does_item_exist(self.model.draw_node_id):
+            dpg.delete_item(self.model.draw_node_id, children_only=True)
+
+class Calculations:
+    def __init__(self):
+        
+        # Загружаем библиотеку
+        self.lib = ctypes.CDLL('build/src/libcalculations.so')
+
+        # Объявляем тип Matrix*
+        class Matrix(ctypes.Structure):
+            pass
+
+        Matrix_p = ctypes.POINTER(Matrix)
+        # Создаем матрицы параметров
+
+        # Определяем типы аргументов и возвращаемого значения
+        self.lib.diagram_calc.argtypes = [
+            ctypes.c_double,  # L
+            np.ctypeslib.ndpointer(dtype=np.float64),  # x
+            ctypes.c_size_t,  # size
+            np.ctypeslib.ndpointer(dtype=np.float64),  # V
+            np.ctypeslib.ndpointer(dtype=np.float64),  # M
+            Matrix_p,  # pl
+            Matrix_p,  # dl
+            Matrix_p,  # moments
+        ]
+
+        self.lib.diagram_calc.restype = None
+    
+        # Определим возвращаемые и аргументные типы
+        self.lib.Matrix_create.argtypes = [ctypes.c_int, ctypes.c_int]
+        self.lib.Matrix_create.restype = Matrix_p
+
+        self.lib.Matrix_destroy.argtypes = [ctypes.c_void_p]
+        self.lib.Matrix_destroy.restype = None
+
+        self.lib.Matrix_set.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int, ctypes.c_double]
+        self.lib.Matrix_get.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int]
+        self.lib.Matrix_get.restype = ctypes.c_double
+
+    def calc(self):
+        
+        point_loadsM = self.lib.Matrix_create(0, 0)
+
+        distributed_loadsM = self.lib.Matrix_create(0, 0)
+        momentsM = self.lib.Matrix_create(0, 0)
+        
+        if point_loads:
+            point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0]))
+        if distributed_loads:
+            distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0]))
+        if moments:
+            momentsM = self.lib.Matrix_create(len(moments), len(moments[0]))
+
+        for i, t in enumerate(point_loads):
+            for j, load in enumerate(t):
+                self.lib.Matrix_set(point_loadsM, i, j, load)
+
+        for i, t in enumerate(distributed_loads):
+            for j, load in enumerate(t):
+                self.lib.Matrix_set(distributed_loadsM, i, j, load)
+                
+        for i, t in enumerate(moments):
+            for j, load in enumerate(t):
+                self.lib.Matrix_set(momentsM, i, j, load)                            
+        
+        # Подготавливаем массивы для результатов
+        V = np.zeros(x.size, dtype=np.float64)
+        M = np.zeros(x.size, dtype=np.float64)
+        # Вызываем функцию
+        self.lib.diagram_calc(L, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
+                
+        diag = Diagram(-1, element.start_node, element.end_node, V)
+        diag2 = Diagram(0, element.start_node, element.end_node, M)
+
+        print("lol", self.current_model)
+        self.current_model.diagrams.append(diag.geometry())
+        self.current_model.diagrams.append(diag2.geometry())
+        
+        for i in self.tabs:
+            i.draw_model()
+        
+        M1V = sum(V) * dx
+        M1M = sum(M) * dx
+
+        print(M1M, M1V)
+        
+        self.lib.Matrix_destroy(point_loadsM)
+        self.lib.Matrix_destroy(distributed_loadsM)
+        self.lib.Matrix_destroy(momentsM)
+
+
 class Window:
     def __init__(self):
         
         self.current_model: Model = None
         self.models: dict = {}
         self.isDragging = False
+        
+        self.tabs = []
         
         # Настройка интерфейса
         dpg.create_context()
@@ -149,40 +301,7 @@ class Window:
     def mouse_wheel_handler(self, sender, app_data, user_data):
         if self.current_model:
             self.current_model.set_scale(self.current_model.get_scale() * (1.5**app_data))
-
-    def draw_diagrams(self, diagrams):
-                # Добавляем новую вкладку в tab_bar
-        with dpg.tab(label=self.current_model.name, parent="tab_bar"):
-            # Добавляем область для рисования (drawlist) на этой вкладке
-            with dpg.drawlist(width=W, height=H, tag=self.drawlist_id):
-                with dpg.draw_layer( parent=self.drawlist_id, tag=self.draw_layer_id):
-                    with dpg.draw_node(parent=self.draw_layer_id, tag=self.current_model.draw_node_id) as f:
-                        for prim in diagrams:
-                            if isinstance(prim, Circle):
-                                dpg.draw_circle(center=prim.pos, radius=prim.radius, color=prim.color, thickness=prim.thickness)
-                            elif isinstance(prim, Line):
-                                dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
-
-    # Функция для отрисовки модели
-    def draw_model(self):
-        
-        if not self.current_model:
-            return
-        
-        self.current_model.update()
-        
-        for key, val in self.current_model.data.items():
-            for object in val:
-                for prim in object.geometry():
-                    if isinstance(prim, Arrow):
-                        dpg.draw_arrow(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness, size = 1)
-                    elif isinstance(prim, Circle):
-                        dpg.draw_circle(center=prim.pos, radius=prim.radius, color=prim.color, thickness=prim.thickness)
-                    elif isinstance(prim, Line):
-                        dpg.draw_line(prim.p1, prim.p2, color=prim.color, thickness=prim.thickness)
-                    elif isinstance(prim, QBezier):
-                        dpg.draw_bezier_quadratic(prim.p1, prim.p2, prim.p3, color=prim.color, thickness=prim.thickness)
-                        
+  
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
         self.current_model.load_model(app_data.get("file_path_name"))
@@ -196,45 +315,36 @@ class Window:
 
     def calculate(self):
 
-        L = 6  # длина балки, м
-        dx = 0.01
-
-        x = np.arange(0, L + dx, dx)
-        
-        # --- Нагрузки ---
-        point_loads = [[4, -30]]  # (позиция, сила в кН)
-        distributed_loads = [[0, 2, -10]]   # (от, до, q кН/м)
-        moments = [[2, 20]]                # (позиция, момент в кН·м), отриц — по часовой
-
-        # Загружаем библиотеку
-        lib = ctypes.CDLL('build/src/libcalculations.so')
-
-        # Определяем типы аргументов и возвращаемого значения
-        lib.diagram_calc.argtypes = [
-            ctypes.c_double,                       # L
-            np.ctypeslib.ndpointer(dtype=np.float64),  # x
-            ctypes.c_size_t,                    # size
-            np.ctypeslib.ndpointer(dtype=np.float64),  # V
-            np.ctypeslib.ndpointer(dtype=np.float64)   # M
-        ]
-        lib.diagram_calc.restype = None
-        
-        # Подготавливаем массивы для результатов
-        V = np.zeros(x.size, dtype=np.float64)
-        M = np.zeros(x.size, dtype=np.float64)
-        # Вызываем функцию
-        lib.diagram_calc(L, x, x.size, V, M)
-                
-        diag = Diagram(-1, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[1], V)
-        diag2 = Diagram(0, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[1], M)
-
-        self.draw_diagrams(diag.geometry() + diag2.geometry())
-
-        s = sum(V) * dx
-        print(s)
+        if self.current_model.dsi < 0:
+            raise Exception("DSI < 0; Something went wrong")
+        elif self.current_model.dsi == 0:
+            print("DSI = 0; Система статически определимая")
+        else:
+            print("DSI > 0; Система статически неопределима. Переходим к О.С.")
+            base_model = self.current_model # Один и тот же объект
+            for i in self.current_model.data.get("supports"):
+                pass
             
+            
+        for element in self.current_model.data.get("elements"):
+            L = (element.end_node.point - element.start_node.point).norm()  # длина балки, м
+            dx = 0.01
 
-        
+            x = np.arange(0, L + dx, dx)
+            # --- Нагрузки ---
+            point_loads = []  # (позиция, сила в кН)
+            distributed_loads = []   # (от, до, q кН/м)
+            moments = []                # (позиция, момент в кН·м), отриц — по часовой
+            
+            for load in self.current_model.data.get("loads"):
+                if load.node in [element.start_node, element.end_node]:
+                    if isinstance(load, DistributedForce):
+                        distributed_loads.append([load.node.point.x- load.lenght/2, load.node.point.x + load.lenght/2, load.force])
+                    if isinstance(load, Force):
+                        point_loads.append([load.node.point.x, load.force])
+                    if isinstance(load, Momentum):
+                        moments.append([load.node.point.x, load.force])
+            
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
         print("App Data: ", app_data)
@@ -250,22 +360,11 @@ class Window:
         ):
             dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
-    def create_tab(self, model_name):
+    def create_tab(self):
 
-        # Создаем уникальный идентификатор для вкладки и холста
-        tab_id = dpg.generate_uuid()
-        self.drawlist_id = dpg.generate_uuid()
-        self.draw_layer_id = dpg.generate_uuid()
-        # Добавляем новую вкладку в tab_bar
-        with dpg.tab(label=model_name, parent="tab_bar", tag=tab_id):
-            # Добавляем область для рисования (drawlist) на этой вкладке
-            with dpg.drawlist(width=W, height=H, tag=self.drawlist_id):
-                with dpg.draw_layer( parent=self.drawlist_id, tag=self.draw_layer_id):
-                    with dpg.draw_node(parent=self.draw_layer_id, tag=self.current_model.draw_node_id) as f:
-                        self.current_model.set_pos(Vector(W//8, H//4, 0))
-                        self.draw_model()
-                        
-        dpg.delete_item("file_dialog_id")
+        self.tabs.append(Tab(self.current_model))        
+
+        # dpg.delete_item("file_dialog_id")
 
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
         """Рекурсивное построение дерева с элементами редактирования"""
@@ -456,11 +555,11 @@ class Window:
                 with dpg.child_window(width=W//2, height=H):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
-                        if DEFAULT: # исключительно в тестовых целях
+                        if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
                             self.current_model = Model()
-                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model3.mdl")
+                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model4.mdl")
                             self.models.update({self.current_model.name: self.current_model})
-                            self.create_tab(self.current_model.name)
+                            self.create_tab()
                         
                 # Правый блок — Инспектор
                 # Inspector()
