@@ -3,71 +3,39 @@
         {
             "id": 1,
             "coordinates": [
-                -40,
-                -40,
-                -40
+                0,
+                0,
+                0
             ]
         },
         {
             "id": 2,
             "coordinates": [
-                40,
-                -40,
-                -40
+                10,
+                0,
+                0
             ]
         },
         {
             "id": 3,
             "coordinates": [
-                40,
-                40,
-                -40
+                10,
+                10,
+                0
             ]
         },
-         {
+        {
             "id": 4,
             "coordinates": [
-                -40,
-                40,
-                -40
+                10,
+                4,
+                0
             ]
         },
-               {
+        {
             "id": 5,
             "coordinates": [
-                -40,
-                -40,
-                40
-            ]
-        },
-        {
-            "id": 6,
-            "coordinates": [
-                40,
-                -40,
-                40
-            ]
-        },
-        {
-            "id": 7,
-            "coordinates": [
-                40,
-                40,
-                40
-            ]
-        },
-         {
-            "id": 8,
-            "coordinates": [
-                -40,
-                40,
-                40
-            ]
-        },
-        {
-            "id": 9,
-            "coordinates": [
-                0,
+                4,
                 0,
                 0
             ]
@@ -97,19 +65,55 @@
     },
     "loads": [
         {
+            "id": 1,
             "node": 2,
             "type": "force",
-            "values": [
+            "direction": [
                 0,
-                -1000,
+                10,
+                0
+            ]
+        },
+        {
+            "id": 2,
+            "node": 4,
+            "type": "distributed_force",
+            "lenght": 3,
+            "direction": [
+                10,
+                0,
+                0
+            ]
+        },
+        {
+            "id": 3,
+            "node": 5,
+            "type": "momentum",
+            "momentum": [
+                10,
+                0,
                 0
             ]
         }
     ],
-    "boundary_conditions": [
+    "supports": [
         {
+            "id": 1,
+            "node": 3,
+            "type": "fixed",
+            "direction": [1, 0, 0]
+        },
+        {
+            "id": 2,
+            "node": 2,
+            "type": "pinned",
+            "direction": [1, 0, 0]
+        },
+        {
+            "id": 3,
             "node": 1,
-            "type": "fixed"
+            "type": "roller",
+            "direction": [0, -1, 0]
         }
     ]
 }
