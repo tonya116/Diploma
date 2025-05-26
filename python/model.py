@@ -23,10 +23,6 @@ class Model:
 
         self.x = 0
         self.y = 0
-
-        self.x_rot = 0
-        self.y_rot = 0
-        self.z_rot = 0
         
         self.scale = 1
         
@@ -50,15 +46,6 @@ class Model:
 
     def get_pos(self):
         return [self.x, self.y]
-
-    def rotate_x(self, angle):
-        self.x_rot += angle
-
-    def rotate_y(self, angle):
-        self.y_rot += angle
-
-    def rotate_z(self, angle):
-        self.z_rot += angle
 
     def load_model(self, filename:str):
         self.filename = filename
@@ -136,9 +123,6 @@ class Model:
         self.model_matrix = (
             
             dpg.create_translation_matrix([self.x, self.y])
-            * dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
-            * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
-            * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
             * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
         )
         dpg.apply_transform(

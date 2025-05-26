@@ -218,22 +218,6 @@ class Window:
     def key_down_handler(self, sender, app_data, user_data):
         if not self.current_model:
             return
-        
-        if app_data == dpg.mvKey_LShift:
-            self.current_model.rotate_x(1)
-        if app_data == dpg.mvKey_ModCtrl:
-            self.current_model.rotate_x(-1)
-
-        if app_data == dpg.mvKey_W:
-            self.current_model.rotate_y(1)
-        if app_data == dpg.mvKey_S:
-            self.current_model.rotate_y(-1)
-
-        if app_data == dpg.mvKey_A:
-            self.current_model.rotate_z(1)
-        if app_data == dpg.mvKey_D:
-            self.current_model.rotate_z(-1)            
-
 
         if app_data == dpg.mvKey_Q:
             self.current_model.x = self.current_model.x - 30
@@ -244,8 +228,7 @@ class Window:
         
         if self.current_model:
             dx, dy = dpg.get_mouse_drag_delta()
-            self.current_model.rotate_x(dx/100)
-            self.current_model.rotate_y(dy/100)
+
 
             # self.current_model.set_pos(Vector(dx/2 - W//2, dy/2 - H//2, 0))
 
@@ -346,7 +329,7 @@ class Window:
             print("DSI = 0; Система статически определимая")
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
-            base_model = self.current_model.copy() # Один и тот же объект
+            base_model = self.current_model.copy()
 
             for i in range(base_model.dsi):
                 sups = base_model.data.get("supports")
@@ -576,7 +559,7 @@ class Window:
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
                         if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
                             self.current_model = Model()
-                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model5.mdl")
+                            self.current_model.load_model(config("DEFAULT_MODEL"))
                             self.models.update({self.current_model.name: self.current_model})
                             self.create_tab()
                         
@@ -592,7 +575,7 @@ class Window:
         # Регистрируем шрифт
         with dpg.font_registry():
             # Первый параметр - размер, второй - путь к файлу шрифта
-            default_font = dpg.add_font("/home/denour/Develop/cpp/fps/assets/font/arial.ttf", 16)
+            default_font = dpg.add_font(config("FONT"), 16)
 
         # Устанавливаем шрифт по умолчанию для всех элементов
         dpg.bind_font(default_font)
