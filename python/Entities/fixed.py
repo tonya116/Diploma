@@ -15,11 +15,11 @@ class Fixed(Support):
         self.dof = 3
 
         n = 2
-        self.ctrlPoints.append(Point(-n, 0, 0))
-        self.ctrlPoints.append(Point(n, 0, 0))
+        self.ctrlPoints.append(Point(-n, 0))
+        self.ctrlPoints.append(Point(n, 0))
         for i in range(-n//2, n+1):
-            self.ctrlPoints.append(Point(i, 0, 0))
-            self.ctrlPoints.append(Point(i-1, 1, 0))
+            self.ctrlPoints.append(Point(i, 0))
+            self.ctrlPoints.append(Point(i-1, 1))
 
     def geometry(self):
         self.primitives.clear()

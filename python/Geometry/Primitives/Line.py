@@ -8,7 +8,7 @@ class Line(Entity):
         super().__init__(color=color, thickness=thickness)
         self.p1 = p1
         self.p2 = p2
-        self.r = [Point(), Point(1, 0, 0)]
+        self.r = [Point(), Point(1, 0)]
         
     def __str__(self):
         return f"Line: p1={self.p1}, p2={self.p2}"

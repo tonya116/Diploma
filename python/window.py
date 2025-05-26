@@ -54,7 +54,7 @@ class Tab:
         self.model = model
         self.drawlist_id = None
         self.draw_layer_id = None
-        self.model.set_pos(Vector(W//8, H//4, 0))
+        self.model.set_pos(Vector(W//8, H//4))
     
     # Создаем вкладку и все дочерние элементы
         with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
@@ -558,7 +558,7 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.6", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.8", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
