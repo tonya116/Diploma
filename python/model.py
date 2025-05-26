@@ -124,8 +124,6 @@ class Model:
         print(filename)
         if not filename:
             with open(self.filename, "w") as f:
-                # print(self.data.items())
-                
                 json.dump(self.data, f, default=__dict__, indent=5)
             print(f"Write model to {self.filename}")
 
@@ -155,3 +153,9 @@ class Model:
         
     def get_scale(self):
         return self.scale
+    
+    def copy(self):
+        tmp = Model()
+        tmp.load_model("/home/denour/Develop/Diplom/models/model5.mdl")
+        return tmp
+    

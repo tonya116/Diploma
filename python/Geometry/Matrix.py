@@ -1,5 +1,6 @@
+from typing import Union
 from Geometry.Vector import Vector
-from math import sin, cos
+from math import atan2, sin, cos
 class Matrix:
     def __init__(self, data):
         """
@@ -122,22 +123,36 @@ class Matrix:
         return self.rows == self.cols
 
 class TranslationMatrix(Matrix):
-    def __init__(self, dirVec: Vector = Vector(0, 0, 0)):
-        self.data = [[1, 0, 0, dirVec.x], [0, 1, 0, dirVec.y], [0, 0, 1, dirVec.z], [0, 0, 0, 1]]
+    def __init__(self, dirVec: Vector = Vector()):
+        self.data = [[1, 0, dirVec.x], [0, 1, dirVec.y], [0, 0, 1]]
         super().__init__(self.data)
-        
+
+
 class RotationMatrix(Matrix):
-    def __init__(self, angle:float = 0, dirVec: Vector = Vector(0, 0, 1)):
-        self.K = [
-        [0,    -dirVec.z,   dirVec.y],
-        [dirVec.z,    0,   -dirVec.x],
-        [-dirVec.y,  dirVec.x,    0]
+    def __init__(self, angle: float = 0, direction: Union[Vector, float] = 1.0):
+        """
+        Создает 2D матрицу поворота
+        
+        Параметры:
+        - angle: угол поворота в радианах
+        - direction: 
+          * число 1.0 для поворота против часовой стрелки, -1.0 для обратного направления
+          * либо Vector, задающий ось (для совместимости с 3D, но в 2D будет проигнорирован)
+        """
+        # Для 2D достаточно только угла, направление вращения определяется знаком угла
+        cos_theta = cos(angle)
+        sin_theta = sin(angle)
+        
+        # Стандартная 2D матрица поворота
+        self.data = [
+            [cos_theta, -sin_theta, 0],
+            [sin_theta,  cos_theta, 0],
+            [0,          0,         1]
         ]
         
-        self.eye = Matrix([[int(i == j) for j in range(3)] for i in range(3)])
-        
-        sin_theta = sin(angle)
-        cos_theta = cos(angle)
-        
-        self.data = (self.eye + Matrix(self.K) * sin_theta + (Matrix(self.K) @ Matrix(self.K)) * (1 - cos_theta)).data
         super().__init__(self.data)
+
+    @property
+    def rotation_angle(self):
+        """Возвращает угол поворота в радианах"""
+        return atan2(self.data[1][0], self.data[0][0])

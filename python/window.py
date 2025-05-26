@@ -54,7 +54,7 @@ class Tab:
         self.model = model
         self.drawlist_id = None
         self.draw_layer_id = None
-        self.model.set_pos(Vector(W//8, H//4, 0))
+        self.model.set_pos(Vector(W//8, H//4))
     
     # Создаем вкладку и все дочерние элементы
         with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
@@ -124,57 +124,80 @@ class Calculations:
         self.lib.Matrix_get.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int]
         self.lib.Matrix_get.restype = ctypes.c_double
 
-    def calc(self):
+    def calc(self, model):
         
-        point_loadsM = self.lib.Matrix_create(0, 0)
+        for element in model.data.get("elements"):
+            L = (element.end_node.point - element.start_node.point).norm()  # длина балки, м
 
-        distributed_loadsM = self.lib.Matrix_create(0, 0)
-        momentsM = self.lib.Matrix_create(0, 0)
+            x = np.arange(0, L + float(config("DX")), float(config("DX")))
+            # --- Нагрузки ---
+            point_loads = []  # (позиция, сила в кН)
+            distributed_loads = []   # (от, до, q кН/м)
+            moments = []                # (позиция, момент в кН·м), отриц — по часовой
+            
+            for load in model.data.get("loads"):
+                if load.node in [element.start_node, element.end_node]:
+                    if isinstance(load, DistributedForce):
+                        distributed_loads.append([load.node.point.x- load.lenght/2, load.node.point.x + load.lenght/2, load.force])
+                    if isinstance(load, Force):
+                        point_loads.append([load.node.point.x, load.force])
+                    if isinstance(load, Momentum):
+                        moments.append([load.node.point.x, load.force])
+            
         
-        if point_loads:
-            point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0]))
-        if distributed_loads:
-            distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0]))
-        if moments:
-            momentsM = self.lib.Matrix_create(len(moments), len(moments[0]))
+        # point_loadsM = self.lib.Matrix_create(0, 0)
 
-        for i, t in enumerate(point_loads):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(point_loadsM, i, j, load)
+        # distributed_loadsM = self.lib.Matrix_create(0, 0)
+        # momentsM = self.lib.Matrix_create(0, 0)
+        
+        # if point_loads:
+        #     point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0]))
+        # if distributed_loads:
+        #     distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0]))
+        # if moments:
+        #     momentsM = self.lib.Matrix_create(len(moments), len(moments[0]))
 
-        for i, t in enumerate(distributed_loads):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(distributed_loadsM, i, j, load)
+        # for i, t in enumerate(point_loads):
+        #     for j, load in enumerate(t):
+        #         self.lib.Matrix_set(point_loadsM, i, j, load)
+
+        # for i, t in enumerate(distributed_loads):
+        #     for j, load in enumerate(t):
+        #         self.lib.Matrix_set(distributed_loadsM, i, j, load)
                 
-        for i, t in enumerate(moments):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(momentsM, i, j, load)                            
+        # for i, t in enumerate(moments):
+        #     for j, load in enumerate(t):
+        #         self.lib.Matrix_set(momentsM, i, j, load)                            
         
-        # Подготавливаем массивы для результатов
-        V = np.zeros(x.size, dtype=np.float64)
-        M = np.zeros(x.size, dtype=np.float64)
-        # Вызываем функцию
-        self.lib.diagram_calc(L, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
-                
-        diag = Diagram(-1, element.start_node, element.end_node, V)
-        diag2 = Diagram(0, element.start_node, element.end_node, M)
+        # # Подготавливаем массивы для результатов
+        # V = np.zeros(x.size, dtype=np.float64)
+        # M = np.zeros(x.size, dtype=np.float64)
+        # # Вызываем функцию
+        # self.lib.diagram_calc(L, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
+        
+        
+        M1V = sum(V) * float(config("DX"))
+        M1M = sum(M) * float(config("DX"))
+        print(M1M, M1V)    
 
-        print("lol", self.current_model)
-        self.current_model.diagrams.append(diag.geometry())
-        self.current_model.diagrams.append(diag2.geometry())
-        
-        for i in self.tabs:
-            i.draw_model()
-        
-        M1V = sum(V) * dx
-        M1M = sum(M) * dx
+        # diag = Diagram(-1, element.start_node, element.end_node, V)
+        # diag2 = Diagram(0, element.start_node, element.end_node, M)
 
-        print(M1M, M1V)
+        # model.diagrams.append(diag.geometry())
+        # model.diagrams.append(diag2.geometry())
         
-        self.lib.Matrix_destroy(point_loadsM)
-        self.lib.Matrix_destroy(distributed_loadsM)
-        self.lib.Matrix_destroy(momentsM)
+        # self.lib.Matrix_destroy(point_loadsM)
+        # self.lib.Matrix_destroy(distributed_loadsM)
+        # self.lib.Matrix_destroy(momentsM)
 
+    def center_of_mass_1d(values, dx=0.01):
+        total_mass = 0.0
+        cx = 0.0
+        for i, v in enumerate(values):
+            x = i * dx
+            cx += x * v
+            total_mass += v
+        return cx / total_mass if total_mass else None
 
 class Window:
     def __init__(self):
@@ -182,6 +205,8 @@ class Window:
         self.current_model: Model = None
         self.models: dict = {}
         self.isDragging = False
+        
+        self.calc = Calculations()
         
         self.tabs = []
         
@@ -321,30 +346,24 @@ class Window:
             print("DSI = 0; Система статически определимая")
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
-            base_model = self.current_model # Один и тот же объект
-            for i in self.current_model.data.get("supports"):
-                pass
-            
-            
-        for element in self.current_model.data.get("elements"):
-            L = (element.end_node.point - element.start_node.point).norm()  # длина балки, м
-            dx = 0.01
+            base_model = self.current_model.copy() # Один и тот же объект
 
-            x = np.arange(0, L + dx, dx)
-            # --- Нагрузки ---
-            point_loads = []  # (позиция, сила в кН)
-            distributed_loads = []   # (от, до, q кН/м)
-            moments = []                # (позиция, момент в кН·м), отриц — по часовой
-            
-            for load in self.current_model.data.get("loads"):
-                if load.node in [element.start_node, element.end_node]:
-                    if isinstance(load, DistributedForce):
-                        distributed_loads.append([load.node.point.x- load.lenght/2, load.node.point.x + load.lenght/2, load.force])
-                    if isinstance(load, Force):
-                        point_loads.append([load.node.point.x, load.force])
-                    if isinstance(load, Momentum):
-                        moments.append([load.node.point.x, load.force])
-            
+            for i in range(base_model.dsi):
+                sups = base_model.data.get("supports")
+                for sup in sups:
+                    if isinstance(sup, Roller):
+                        sups.remove(sup)
+                        eq_model = base_model.copy()
+                        
+                        base_model.data.get("loads").clear()
+                        base_model.data.get("loads").append(Force(-10, sup.node, sup.direction))
+
+                        for i in self.current_model.data.get("loads"):
+                            eq_model.data.get('loads').append(i)
+
+        self.calc.calc(base_model)
+        self.calc.calc(eq_model)
+
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
         print("App Data: ", app_data)
@@ -539,7 +558,7 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.6", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.8", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
@@ -557,7 +576,7 @@ class Window:
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
                         if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
                             self.current_model = Model()
-                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model4.mdl")
+                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model5.mdl")
                             self.models.update({self.current_model.name: self.current_model})
                             self.create_tab()
                         
