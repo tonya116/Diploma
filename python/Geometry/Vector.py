@@ -11,6 +11,12 @@ class Vector:
         tmp.y += other.y
         return tmp
     
+    def __sub__(self, other):
+        tmp = Vector(self.x, self.y)
+        tmp.x -= other.x
+        tmp.y -= other.y
+        return tmp
+    
     def __mul__(self, scalar):
         tmp = Vector(self.x, self.y)
         tmp.x *= scalar
