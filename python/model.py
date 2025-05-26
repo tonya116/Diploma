@@ -45,7 +45,7 @@ class Model:
         self.y = point.y
 
     def get_pos(self):
-        return [self.x, self.y]
+        return Vector(self.x, self.y)
 
     def load_model(self, filename:str):
         self.filename = filename

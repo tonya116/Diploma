@@ -21,70 +21,12 @@ from Entities.force import Force
 from Entities.distributed_force import DistributedForce
 from Entities.momentum import Momentum
 from Entities.diagrams import Diagram
+from tab import Tab
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
 DEFAULT = True
 
-def draw(primitive, node_id):
-    if isinstance(primitive, Arrow):
-        dpg.draw_arrow(primitive.p1, primitive.p2,
-                            color=primitive.color,
-                            thickness=primitive.thickness, parent=node_id)
-    elif isinstance(primitive, Circle):
-        dpg.draw_circle(center=primitive.pos,
-                        radius=primitive.radius,
-                        color=primitive.color,
-                        thickness=primitive.thickness, parent=node_id)
-    elif isinstance(primitive, Line):
-        dpg.draw_line(primitive.p1, primitive.p2,
-                    color=primitive.color,
-                    thickness=primitive.thickness, parent=node_id)
-    elif isinstance(primitive, QBezier):
-        dpg.draw_bezier_quadratic(primitive.p1, primitive.p2, primitive.p3,
-                                    color=primitive.color,
-                                    thickness=primitive.thickness, parent=node_id)
-
-
-class Tab:
-    def __init__(self, model:Model):
-        
-        self.model = model
-        
-        self.model = model
-        self.drawlist_id = None
-        self.draw_layer_id = None
-        self.model.set_pos(Vector(W//8, H//4))
-    
-    # Создаем вкладку и все дочерние элементы
-        with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
-            with dpg.drawlist(width=W, height=H, parent=self.tab_id) as self.drawlist_id:
-                with dpg.draw_layer(parent=self.drawlist_id) as self.draw_layer_id:
-                    with dpg.draw_node(parent=self.draw_layer_id) as self.model.draw_node_id:
-                        self.draw_model()                        
-
-    def draw_model(self):
-        # Очищаем предыдущие элементы
-        self.clear_model()
-        
-        if not self.model:
-            return
-        
-        self.model.update()
-    
-        for key, val in self.model.data.items():
-            for obj in val:
-                for prim in obj.geometry():
-                   draw(prim, self.model.draw_node_id)
-        # Отрисовка диаграмм
-        print("lol draw", self.model)
-        
-        # for diagram in self.model.diagrams:
-        
-    def clear_model(self):
-        """Удаляет все графические элементы модели"""
-        if dpg.does_item_exist(self.model.draw_node_id):
-            dpg.delete_item(self.model.draw_node_id, children_only=True)
 
 class Calculations:
     def __init__(self):
@@ -225,12 +167,16 @@ class Window:
             self.current_model.x = self.current_model.x + 30
 
     def mouse_drag_handler(self, sender, app_data, user_data):
-        
-        if self.current_model:
-            dx, dy = dpg.get_mouse_drag_delta()
-
-
-            # self.current_model.set_pos(Vector(dx/2 - W//2, dy/2 - H//2, 0))
+        pass   
+        # if self.current_model:
+        #     dx, dy = dpg.get_mouse_drag_delta()
+        #     # print(dpg.get_drawing_mouse_pos())
+        #     print(dx, dy)
+        #     f = Vector(dx, dy) 
+        #     current_pos = self.current_model.get_pos()
+        #     delta = current_pos + f/2
+        #     self.current_model.set_pos(Vector(delta.x, delta.y))
+        #     print(self.current_model.get_pos())
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
         if self.current_model and app_data == dpg.mvMouseButton_Left:
@@ -363,6 +309,7 @@ class Window:
             dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
     def create_tab(self):
+        self.current_model.set_pos(Vector(W//8, H//4))
 
         self.tabs.append(Tab(self.current_model))        
 
