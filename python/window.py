@@ -1,4 +1,5 @@
 import ctypes
+import json
 import math
 import os
 from typing import Any
@@ -21,125 +22,13 @@ from Entities.force import Force
 from Entities.distributed_force import DistributedForce
 from Entities.momentum import Momentum
 from Entities.diagrams import Diagram
+from calculations import Calculations
 from tab import Tab
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
 DEFAULT = True
 
-
-class Calculations:
-    def __init__(self):
-        
-        # Загружаем библиотеку
-        self.lib = ctypes.CDLL('build/src/libcalculations.so')
-
-        # Объявляем тип Matrix*
-        class Matrix(ctypes.Structure):
-            pass
-
-        Matrix_p = ctypes.POINTER(Matrix)
-        # Создаем матрицы параметров
-
-        # Определяем типы аргументов и возвращаемого значения
-        self.lib.diagram_calc.argtypes = [
-            ctypes.c_double,  # L
-            np.ctypeslib.ndpointer(dtype=np.float64),  # x
-            ctypes.c_size_t,  # size
-            np.ctypeslib.ndpointer(dtype=np.float64),  # V
-            np.ctypeslib.ndpointer(dtype=np.float64),  # M
-            Matrix_p,  # pl
-            Matrix_p,  # dl
-            Matrix_p,  # moments
-        ]
-
-        self.lib.diagram_calc.restype = None
-    
-        # Определим возвращаемые и аргументные типы
-        self.lib.Matrix_create.argtypes = [ctypes.c_int, ctypes.c_int]
-        self.lib.Matrix_create.restype = Matrix_p
-
-        self.lib.Matrix_destroy.argtypes = [ctypes.c_void_p]
-        self.lib.Matrix_destroy.restype = None
-
-        self.lib.Matrix_set.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int, ctypes.c_double]
-        self.lib.Matrix_get.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int]
-        self.lib.Matrix_get.restype = ctypes.c_double
-
-    def calc(self, model):
-        
-        for element in model.data.get("elements"):
-            L = (element.end_node.point - element.start_node.point).norm()  # длина балки, м
-
-            x = np.arange(0, L + float(config("DX")), float(config("DX")))
-            # --- Нагрузки ---
-            point_loads = []  # (позиция, сила в кН)
-            distributed_loads = []   # (от, до, q кН/м)
-            moments = []                # (позиция, момент в кН·м), отриц — по часовой
-            
-            for load in model.data.get("loads"):
-                if load.node in [element.start_node, element.end_node]:
-                    if isinstance(load, DistributedForce):
-                        distributed_loads.append([load.node.point.x- load.lenght/2, load.node.point.x + load.lenght/2, load.force])
-                    if isinstance(load, Force):
-                        point_loads.append([load.node.point.x, load.force])
-                    if isinstance(load, Momentum):
-                        moments.append([load.node.point.x, load.force])
-            
-        
-        # point_loadsM = self.lib.Matrix_create(0, 0)
-
-        # distributed_loadsM = self.lib.Matrix_create(0, 0)
-        # momentsM = self.lib.Matrix_create(0, 0)
-        
-        # if point_loads:
-        #     point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0]))
-        # if distributed_loads:
-        #     distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0]))
-        # if moments:
-        #     momentsM = self.lib.Matrix_create(len(moments), len(moments[0]))
-
-        # for i, t in enumerate(point_loads):
-        #     for j, load in enumerate(t):
-        #         self.lib.Matrix_set(point_loadsM, i, j, load)
-
-        # for i, t in enumerate(distributed_loads):
-        #     for j, load in enumerate(t):
-        #         self.lib.Matrix_set(distributed_loadsM, i, j, load)
-                
-        # for i, t in enumerate(moments):
-        #     for j, load in enumerate(t):
-        #         self.lib.Matrix_set(momentsM, i, j, load)                            
-        
-        # # Подготавливаем массивы для результатов
-        # V = np.zeros(x.size, dtype=np.float64)
-        # M = np.zeros(x.size, dtype=np.float64)
-        # # Вызываем функцию
-        # self.lib.diagram_calc(L, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
-        
-        
-        M1V = sum(V) * float(config("DX"))
-        M1M = sum(M) * float(config("DX"))
-        print(M1M, M1V)    
-
-        # diag = Diagram(-1, element.start_node, element.end_node, V)
-        # diag2 = Diagram(0, element.start_node, element.end_node, M)
-
-        # model.diagrams.append(diag.geometry())
-        # model.diagrams.append(diag2.geometry())
-        
-        # self.lib.Matrix_destroy(point_loadsM)
-        # self.lib.Matrix_destroy(distributed_loadsM)
-        # self.lib.Matrix_destroy(momentsM)
-
-    def center_of_mass_1d(values, dx=0.01):
-        total_mass = 0.0
-        cx = 0.0
-        for i, v in enumerate(values):
-            x = i * dx
-            cx += x * v
-            total_mass += v
-        return cx / total_mass if total_mass else None
 
 class Window:
     def __init__(self):
@@ -268,7 +157,7 @@ class Window:
         print(f"Active tab: {app_data}")
 
     def calculate(self):
-
+        
         if self.current_model.dsi < 0:
             raise Exception("DSI < 0; Something went wrong")
         elif self.current_model.dsi == 0:
@@ -276,22 +165,60 @@ class Window:
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
             base_model = self.current_model.copy()
+            sups = base_model.data.get("supports")
 
-            for i in range(base_model.dsi):
-                sups = base_model.data.get("supports")
+            fixed_n = 0
+            roller_n = 0
+            pinned_n = 0
+
+            for sup in sups:
+                if isinstance(sup, Fixed):
+                    fixed_n += 1
+                elif isinstance(sup, Roller):
+                    roller_n += 1
+                elif isinstance(sup, Pinned):
+                    pinned_n += 1
+                        
+            if fixed_n == 0 and pinned_n == 0:
+                raise Exception("Конструкция является механизмом")
+
+            if fixed_n != 0:
+                for sup in sups:
+                    if isinstance(sup, Fixed):
+                        tmp = sup
+                        break
+                sups.clear()
+                sups.append(tmp)
+                
+            if pinned_n == 1:
+                r = None
+                p = None
                 for sup in sups:
                     if isinstance(sup, Roller):
-                        sups.remove(sup)
-                        eq_model = base_model.copy()
+                        r = sup
+                    
+                    if isinstance(sup, Pinned):
+                        p = sup
                         
-                        base_model.data.get("loads").clear()
-                        base_model.data.get("loads").append(Force(-10, sup.node, sup.direction))
+                sups.clear()
+                sups.append(r)
+                sups.append(p)                        
+            
+            if pinned_n > 1:
+                pinneds = []
+                for sup in sups:
+                    if isinstance(sup, Pinned):
+                        pinneds.append(sup)
+                    
+                    if len(pinneds) == 2:
+                        break
+                sups.clear()
+                sups.append(pinneds[0])
+                sups.append(Roller(pinneds[1].id, pinneds[1].node, pinneds[1].direction))
 
-                        for i in self.current_model.data.get("loads"):
-                            eq_model.data.get('loads').append(i)
+            base_model.data.update({"supports": sups})
 
         self.calc.calc(base_model)
-        self.calc.calc(eq_model)
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)

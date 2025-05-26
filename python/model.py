@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 from pydantic import BaseModel
 from Entities.force import Force
 from Entities.distributed_force import DistributedForce
-
+from config import config
 from Entities.node import Node, NodeModel
 from Entities.element import Element
 from Entities.fixed import Fixed
@@ -140,6 +140,6 @@ class Model:
     
     def copy(self):
         tmp = Model()
-        tmp.load_model("/home/denour/Develop/Diplom/models/model5.mdl")
+        tmp.load_model(config("DEFAULT_MODEL"))
         return tmp
     
