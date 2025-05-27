@@ -1,6 +1,7 @@
 
 from Geometry.Primitives.Arrow import Arrow
 from Geometry.Primitives.Circle import Circle
+from Geometry.Primitives.Text import Text
 from Geometry.Primitives.Line import Line
 from Geometry.Primitives.QBezier import QBezier
 from config import config
@@ -45,7 +46,14 @@ def draw(primitive, node_id):
             thickness=primitive.thickness,
             parent=node_id,
         )
-
+    elif isinstance(primitive, Text):
+        dpg.draw_text(
+            pos=primitive.p1,
+            text=primitive.text,
+            color=primitive.color,
+            size=30,
+            parent=node_id,
+        )
 
 class Tab:
     def __init__(self, model: Model):
@@ -79,7 +87,7 @@ class Tab:
                     draw(prim, self.model.draw_node_id)
                     
         for obj in self.model.diagrams:
-            for prim in obj:
+            for prim in obj.geometry():
                 draw(prim, self.model.draw_node_id)
                     
     def clear_model(self):
