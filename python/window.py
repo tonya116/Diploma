@@ -5,6 +5,7 @@ import os
 from typing import Any
 
 from dearpygui import dearpygui as dpg
+from matplotlib import pyplot as plt
 import numpy as np
 from model import Model
 from Geometry.Primitives.Circle import Circle
@@ -34,12 +35,10 @@ class Window:
     def __init__(self):
         
         self.current_model: Model = None
+        self.calc: Calculations = Calculations()
         self.models: dict = {}
-        self.isDragging = False
-        
-        self.calc = Calculations()
-        
-        self.tabs = []
+        self.tabs: dict = {}
+        self.isDragging:bool = False
         
         # Настройка интерфейса
         dpg.create_context()
@@ -148,14 +147,13 @@ class Window:
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
         self.current_model.load_model(app_data.get("file_path_name"))
-        self.models.update({self.current_model.name: self.current_model})
-        self.create_tab(self.current_model.name)
+        self.create_tab(self.current_model)
 
     # Функция для проверки активного таба
     def tab_change_callback(self, sender, app_data, user_data):
         print(f"Active tab: {app_data}")
         print(self.models)
-        self.current_model = self.models[app_data]
+        self.current_model = self.tabs.get(app_data).model
 
     def calculate(self):
         
@@ -218,11 +216,13 @@ class Window:
                 sups.append(Roller(pinneds[1].id, pinneds[1].node, pinneds[1].direction))
 
             base_model.data.update({"supports": sups})
+            
         base_model.set_pos(Vector(W//8, H//4))
-        self.models.update({base_model.name+"_diagrams": base_model})
-        self.tabs.append(Tab(base_model))                
+        base_model.name += "_diagram"
         
-        self.calc.calc(base_model)
+        base_model.diagrams = self.calc.calc(base_model)
+        
+        self.create_tab(base_model)
         
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
@@ -239,11 +239,12 @@ class Window:
         ):
             dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
-    def create_tab(self):
-        self.current_model.set_pos(Vector(W//8, H//4))
+    def create_tab(self, model:Model):
+        tab = Tab(model)
+        self.tabs.update({tab.tab_id:tab})
+        self.models.update({model.name: model})
 
-        self.tabs.append(Tab(self.current_model))        
-
+        return tab.tab_id
         # dpg.delete_item("file_dialog_id")
 
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
@@ -419,7 +420,7 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.8", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.9", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
@@ -438,8 +439,7 @@ class Window:
                         if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
                             self.current_model = Model()
                             self.current_model.load_model(config("DEFAULT_MODEL"))
-                            self.models.update({self.current_model.name: self.current_model})
-                            self.create_tab()
+                            self.create_tab(self.current_model)
                         
                 # Правый блок — Инспектор
                 # Inspector()

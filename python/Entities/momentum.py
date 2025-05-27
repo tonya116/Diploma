@@ -17,9 +17,8 @@ class Momentum(Load):
 
         self.ctrlPoints.append(Point(0, -1))
         self.ctrlPoints.append(Point(0, 1))
-        self.ctrlPoints.append(Point(1, 1))
-        self.ctrlPoints.append(Point(-1, -1))
-
+        self.ctrlPoints.append(Point(1, -1))
+        self.ctrlPoints.append(Point(-1, 1))
 
     def __str__(self):
         return f"Node: {self.node}, Direction: {self.direction}, Momentum: {self.force}"

@@ -6,6 +6,7 @@ from Geometry.Primitives.QBezier import QBezier
 from config import config
 from dearpygui import dearpygui as dpg
 from model import Model
+from Geometry.Vector import Vector
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
@@ -54,6 +55,7 @@ class Tab:
         self.model = model
         self.drawlist_id = None
         self.draw_layer_id = None
+        self.model.set_pos(Vector(W//8, H//4))
 
         # Создаем вкладку и все дочерние элементы
         with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
@@ -77,7 +79,7 @@ class Tab:
                     draw(prim, self.model.draw_node_id)
                     
         for obj in self.model.diagrams:
-            for prim in obj.geometry():
+            for prim in obj:
                 draw(prim, self.model.draw_node_id)
                     
     def clear_model(self):

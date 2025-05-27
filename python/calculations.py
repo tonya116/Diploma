@@ -1,6 +1,7 @@
 
 import ctypes
 
+from matplotlib import pyplot as plt
 import numpy as np
 
 from config import config
@@ -52,9 +53,8 @@ class Calculations:
         nodes = model.data.get("nodes")
         
         start_node = nodes[0]
-        end_node = nodes[1]
+        end_node = nodes[-1]
         L = (end_node.point - start_node.point).norm()  # длина балки, м
-
         x = np.arange(0, L + float(config("DX")), float(config("DX")))
         # --- Нагрузки ---
         point_loads = []  # (позиция, сила в кН)
@@ -62,15 +62,14 @@ class Calculations:
         moments = []                # (позиция, момент в кН·м), отриц — по часовой
         
         for load in model.data.get("loads"):
-            if load.node in [start_node, end_node]:
-                if isinstance(load, DistributedForce):
-                    distributed_loads.append([load.node.point.x- load.lenght/2, load.node.point.x + load.lenght/2, load.force])
-                if isinstance(load, Force):
-                    point_loads.append([load.node.point.x, load.force])
-                if isinstance(load, Momentum):
-                    moments.append([load.node.point.x, load.force])
-        
-        
+            if isinstance(load, DistributedForce):
+                distributed_loads.append([load.node.point.x - load.lenght/2, load.node.point.x + load.lenght/2, load.force])
+            if isinstance(load, Force):
+                point_loads.append([load.node.point.x, load.force])
+            if isinstance(load, Momentum):
+                moments.append([load.node.point.x, load.force])
+        print(point_loads, distributed_loads, moments)
+
         point_loadsM = self.lib.Matrix_create(0, 0)
 
         distributed_loadsM = self.lib.Matrix_create(0, 0)
@@ -81,7 +80,6 @@ class Calculations:
         if distributed_loads:
             distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0]))
         if moments:
-                
             momentsM = self.lib.Matrix_create(len(moments), len(moments[0]))
 
         for i, t in enumerate(point_loads):
@@ -96,25 +94,25 @@ class Calculations:
             for j, load in enumerate(t):
                 self.lib.Matrix_set(momentsM, i, j, load)                            
         
-        # Подготавливаем массивы для результатов
-        V = np.zeros(x.size, dtype=np.float64)
-        M = np.zeros(x.size, dtype=np.float64)
-        # Вызываем функцию
-        self.lib.diagram_calc(L, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
         
-        M1V = sum(V) * float(config("DX"))
-        M1M = sum(M) * float(config("DX"))
-        print(M1M, M1V)    
-
-        diag = Diagram(-1, start_node, end_node, V)
-        diag2 = Diagram(0, start_node, end_node, M)
-
-        model.diagrams.append(diag.geometry())
-        model.diagrams.append(diag2.geometry())
+        # Подготавливаем массивы для результатов
+        M1V = np.zeros(x.size, dtype=np.float64)
+        M1M = np.zeros(x.size, dtype=np.float64)
+        
+        # Вызываем функцию
+        self.lib.diagram_calc(L, x, x.size, M1V, M1M, point_loadsM, distributed_loadsM, momentsM)  
+        print(len(M1M), len(M1V))
+        diag = Diagram(-1, start_node, end_node, M1V)
+        diag2 = Diagram(0, start_node, end_node, M1M)
+        diagrams = []
+        diagrams.append(diag.geometry())
+        diagrams.append(diag2.geometry())
         
         self.lib.Matrix_destroy(point_loadsM)
         self.lib.Matrix_destroy(distributed_loadsM)
         self.lib.Matrix_destroy(momentsM)
+
+        return diagrams
 
     def center_of_mass_1d(values, dx=0.01):
         total_mass = 0.0
