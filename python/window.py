@@ -24,11 +24,15 @@ from Entities.distributed_force import DistributedForce
 from Entities.momentum import Momentum
 from Entities.diagrams import Diagram
 from calculations import Calculations
+from Geometry.Matrix import Matrix
 from tab import Tab
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
 DEFAULT = True
+
+def mult(a1, a2, index):
+    return a1[index] * a2[index]
 
 
 class Window:
@@ -163,7 +167,13 @@ class Window:
             print("DSI = 0; Система статически определимая")
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
+            
+            eq_models = [self.current_model.copy() for _ in range(self.current_model.dsi)]
+            
             base_model = self.current_model.copy()
+            for em in eq_models:
+                em.data.get("loads").clear()
+            
             sups = base_model.data.get("supports")
 
             fixed_n = 0
@@ -198,10 +208,16 @@ class Window:
                     
                     if isinstance(sup, Pinned):
                         p = sup
+                a = 0
+                for sup in sups:
+                    if sup != r and sup != p:
                         
+                        eq_models[a].data.get("loads").append(Force(-10, sup.node, sup.direction * -1))
+                        a += 1
+                
                 sups.clear()
                 sups.append(r)
-                sups.append(p)                        
+                sups.append(p)
             
             if pinned_n > 1:
                 pinneds = []
@@ -211,18 +227,85 @@ class Window:
                     
                     if len(pinneds) == 2:
                         break
+                    
                 sups.clear()
                 sups.append(pinneds[0])
-                sups.append(Roller(pinneds[1].id, pinneds[1].node, pinneds[1].direction))
+                sups.append(Roller(node=pinneds[1].node, direction=pinneds[1].direction))
 
             base_model.data.update({"supports": sups})
-            
-        base_model.set_pos(Vector(W//8, H//4))
+            for em in eq_models:
+                em.data.update({"supports": sups})
+
+        M1Vb, M1Mb = self.calc.calc(base_model)
+        diag = Diagram(1001, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Vb)
+        diag2 = Diagram(1002, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Mb)
+        diagrams = []
+        diagrams.append(diag)
+        diagrams.append(diag2)
+        base_model.diagrams = diagrams
         base_model.name += "_diagram"
-        
-        base_model.diagrams = self.calc.calc(base_model)
-        
         self.create_tab(base_model)
+       
+        M1Ves = []
+        M1Mes = []
+        for i, em in enumerate(eq_models):
+            M1Ve, M1Me = self.calc.calc(em)
+            print(M1Ve, M1Me)
+            M1Ves.append(M1Ve)
+            M1Mes.append(M1Me)
+
+        for i, em in enumerate(eq_models):
+            
+            diag = Diagram(100+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Ves[i])
+            diag2 = Diagram(102+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Mes[i])
+            diagrams = []
+            diagrams.append(diag)
+            diagrams.append(diag2)
+            em.diagrams = diagrams
+            em.name += f"eq_diagram X{i+1}"  
+            self.create_tab(em)
+
+        dx = float(config("DX"))
+
+        if len(M1Mes) == 1:
+                
+            s = 0
+            for x, _ in enumerate(M1Mes[0]):
+                s += M1Mes[0][x] * M1Mes[0][x]
+            d11 = s * dx
+            s = 0
+            for x, _ in enumerate(M1Mb):
+                s += M1Mes[0][x] * M1Mb[x]
+        
+            d1p = s * dx
+            
+            res = - d1p / d11
+            print(f"res: {res}, d1p: {d1p}, d11:{d11}")
+
+        if len(M1Mes) >= 2:
+
+            deltas = [[0, 0], [0, 0]]
+            B = [[0, 0]]
+            for i in range(len(M1Mes)):
+                for j in range(len(M1Mes)):
+                    s = 0
+                    for x, _ in enumerate(M1Mes[i]):
+                        s += mult(M1Mes[i], M1Mes[j], x)
+                    
+                    deltas[i][j] = s * dx
+                    
+            for i in range(len(M1Mes)):
+                s = 0
+                for x, _ in enumerate(M1Mb):
+                    s += mult(M1Mb, M1Mes[i], x)
+                B[0][i] = s * dx        
+            
+            print(B)
+            print(deltas)
+            b = Matrix(B)
+            delts = Matrix(deltas).inverse()
+
+            print(b * delts)
         
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
