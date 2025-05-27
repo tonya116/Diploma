@@ -12,9 +12,9 @@ Matrix::Matrix(std::initializer_list<std::initializer_list<double>> init) {
 
 Matrix::Matrix(int n, int m) : _n(n), _m(m) {
 
-  _matrix.reserve(m);
-  for (int i = 0; i < m; ++i)
-    _matrix.emplace_back(std::vector<double>(n, 0));
+  _matrix.reserve(n);
+  for (int i = 0; i < n; ++i)
+    _matrix.emplace_back(std::vector<double>(m, 0));
 }
 
 void Matrix::setIdentityMatrix() {
