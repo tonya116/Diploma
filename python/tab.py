@@ -71,11 +71,15 @@ class Tab:
 
         self.model.update()
 
-        for key, val in self.model.data.items():
+        for _, val in self.model.data.items():
             for obj in val:
                 for prim in obj.geometry():
                     draw(prim, self.model.draw_node_id)
-
+                    
+        for obj in self.model.diagrams:
+            for prim in obj.geometry():
+                draw(prim, self.model.draw_node_id)
+                    
     def clear_model(self):
         """Удаляет все графические элементы модели"""
         if dpg.does_item_exist(self.model.draw_node_id):

@@ -153,8 +153,9 @@ class Window:
 
     # Функция для проверки активного таба
     def tab_change_callback(self, sender, app_data, user_data):
-        self.current_model = self.models[app_data]
         print(f"Active tab: {app_data}")
+        print(self.models)
+        self.current_model = self.models[app_data]
 
     def calculate(self):
         
@@ -217,9 +218,12 @@ class Window:
                 sups.append(Roller(pinneds[1].id, pinneds[1].node, pinneds[1].direction))
 
             base_model.data.update({"supports": sups})
-
+        base_model.set_pos(Vector(W//8, H//4))
+        self.models.update({base_model.name+"_diagrams": base_model})
+        self.tabs.append(Tab(base_model))                
+        
         self.calc.calc(base_model)
-
+        
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
         print("App Data: ", app_data)
