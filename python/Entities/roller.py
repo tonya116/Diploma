@@ -15,21 +15,21 @@ class Roller(Support):
         super().__init__(id, node, direction)
         self.dof = 1
         
-        self.ctrlPoints.append(Point(0, 0, 0))
-        self.ctrlPoints.append(Point(0, 1, 0))
+        self.ctrlPoints.append(Point())
+        self.ctrlPoints.append(Point(0, 1))
         n = 2
 
-        self.ctrlPoints.append(Point(-n, 1, 0))
-        self.ctrlPoints.append(Point(n, 1, 0))
+        self.ctrlPoints.append(Point(-n, 1))
+        self.ctrlPoints.append(Point(n, 1))
         for i in range(-n//2, n+1):
-            self.ctrlPoints.append(Point(i, 1, 0))
-            self.ctrlPoints.append(Point(i-1, 2, 0))
+            self.ctrlPoints.append(Point(i, 1))
+            self.ctrlPoints.append(Point(i-1, 2))
             
     def geometry(self):
         self.primitives.clear()
         
         mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix(-3.1415)
+        mr = RotationMatrix()
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt

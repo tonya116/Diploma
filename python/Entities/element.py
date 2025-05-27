@@ -15,13 +15,13 @@ class Element(Object):
         self.type:str = type
         self.material:str = material
         self.ctrlPoints.append(Point())
-        self.ctrlPoints.append(Point(1, 0, 0))
+        self.ctrlPoints.append(Point(1, 0))
 
     def __str__(self):
         return f"Id: {self.id}, Start node: {self.start_node}, End node: {self.end_node}, Type: {self.type}, Material: {self.material}"
 
     def __repr__(self):
-        return super().__dict__().update(self.__dict__())
+        return self.__str__()
          
     def __dict__(self):
         return {"start_node": self.start_node.id, "end_node": self.end_node.id, "type": self.type, "material": self.material}

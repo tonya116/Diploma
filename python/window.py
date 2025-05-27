@@ -1,9 +1,11 @@
 import ctypes
+import json
 import math
 import os
 from typing import Any
 
 from dearpygui import dearpygui as dpg
+from matplotlib import pyplot as plt
 import numpy as np
 from model import Model
 from Geometry.Primitives.Circle import Circle
@@ -21,169 +23,26 @@ from Entities.force import Force
 from Entities.distributed_force import DistributedForce
 from Entities.momentum import Momentum
 from Entities.diagrams import Diagram
+from calculations import Calculations
+from Geometry.Matrix import Matrix
+from tab import Tab
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
 DEFAULT = True
 
-def draw(primitive, node_id):
-    if isinstance(primitive, Arrow):
-        dpg.draw_arrow(primitive.p1, primitive.p2,
-                            color=primitive.color,
-                            thickness=primitive.thickness, parent=node_id)
-    elif isinstance(primitive, Circle):
-        dpg.draw_circle(center=primitive.pos,
-                        radius=primitive.radius,
-                        color=primitive.color,
-                        thickness=primitive.thickness, parent=node_id)
-    elif isinstance(primitive, Line):
-        dpg.draw_line(primitive.p1, primitive.p2,
-                    color=primitive.color,
-                    thickness=primitive.thickness, parent=node_id)
-    elif isinstance(primitive, QBezier):
-        dpg.draw_bezier_quadratic(primitive.p1, primitive.p2, primitive.p3,
-                                    color=primitive.color,
-                                    thickness=primitive.thickness, parent=node_id)
-
-
-class Tab:
-    def __init__(self, model:Model):
-        
-        self.model = model
-        
-        self.model = model
-        self.drawlist_id = None
-        self.draw_layer_id = None
-        self.model.set_pos(Vector(W//8, H//4, 0))
-    
-    # Создаем вкладку и все дочерние элементы
-        with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
-            with dpg.drawlist(width=W, height=H, parent=self.tab_id) as self.drawlist_id:
-                with dpg.draw_layer(parent=self.drawlist_id) as self.draw_layer_id:
-                    with dpg.draw_node(parent=self.draw_layer_id) as self.model.draw_node_id:
-                        self.draw_model()                        
-
-    def draw_model(self):
-        # Очищаем предыдущие элементы
-        self.clear_model()
-        
-        if not self.model:
-            return
-        
-        self.model.update()
-    
-        for key, val in self.model.data.items():
-            for obj in val:
-                for prim in obj.geometry():
-                   draw(prim, self.model.draw_node_id)
-        # Отрисовка диаграмм
-        print("lol draw", self.model)
-        
-        # for diagram in self.model.diagrams:
-        
-    def clear_model(self):
-        """Удаляет все графические элементы модели"""
-        if dpg.does_item_exist(self.model.draw_node_id):
-            dpg.delete_item(self.model.draw_node_id, children_only=True)
-
-class Calculations:
-    def __init__(self):
-        
-        # Загружаем библиотеку
-        self.lib = ctypes.CDLL('build/src/libcalculations.so')
-
-        # Объявляем тип Matrix*
-        class Matrix(ctypes.Structure):
-            pass
-
-        Matrix_p = ctypes.POINTER(Matrix)
-        # Создаем матрицы параметров
-
-        # Определяем типы аргументов и возвращаемого значения
-        self.lib.diagram_calc.argtypes = [
-            ctypes.c_double,  # L
-            np.ctypeslib.ndpointer(dtype=np.float64),  # x
-            ctypes.c_size_t,  # size
-            np.ctypeslib.ndpointer(dtype=np.float64),  # V
-            np.ctypeslib.ndpointer(dtype=np.float64),  # M
-            Matrix_p,  # pl
-            Matrix_p,  # dl
-            Matrix_p,  # moments
-        ]
-
-        self.lib.diagram_calc.restype = None
-    
-        # Определим возвращаемые и аргументные типы
-        self.lib.Matrix_create.argtypes = [ctypes.c_int, ctypes.c_int]
-        self.lib.Matrix_create.restype = Matrix_p
-
-        self.lib.Matrix_destroy.argtypes = [ctypes.c_void_p]
-        self.lib.Matrix_destroy.restype = None
-
-        self.lib.Matrix_set.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int, ctypes.c_double]
-        self.lib.Matrix_get.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int]
-        self.lib.Matrix_get.restype = ctypes.c_double
-
-    def calc(self):
-        
-        point_loadsM = self.lib.Matrix_create(0, 0)
-
-        distributed_loadsM = self.lib.Matrix_create(0, 0)
-        momentsM = self.lib.Matrix_create(0, 0)
-        
-        if point_loads:
-            point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0]))
-        if distributed_loads:
-            distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0]))
-        if moments:
-            momentsM = self.lib.Matrix_create(len(moments), len(moments[0]))
-
-        for i, t in enumerate(point_loads):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(point_loadsM, i, j, load)
-
-        for i, t in enumerate(distributed_loads):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(distributed_loadsM, i, j, load)
-                
-        for i, t in enumerate(moments):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(momentsM, i, j, load)                            
-        
-        # Подготавливаем массивы для результатов
-        V = np.zeros(x.size, dtype=np.float64)
-        M = np.zeros(x.size, dtype=np.float64)
-        # Вызываем функцию
-        self.lib.diagram_calc(L, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
-                
-        diag = Diagram(-1, element.start_node, element.end_node, V)
-        diag2 = Diagram(0, element.start_node, element.end_node, M)
-
-        print("lol", self.current_model)
-        self.current_model.diagrams.append(diag.geometry())
-        self.current_model.diagrams.append(diag2.geometry())
-        
-        for i in self.tabs:
-            i.draw_model()
-        
-        M1V = sum(V) * dx
-        M1M = sum(M) * dx
-
-        print(M1M, M1V)
-        
-        self.lib.Matrix_destroy(point_loadsM)
-        self.lib.Matrix_destroy(distributed_loadsM)
-        self.lib.Matrix_destroy(momentsM)
+def mult(a1, a2, index):
+    return a1[index] * a2[index]
 
 
 class Window:
     def __init__(self):
         
         self.current_model: Model = None
+        self.calc: Calculations = Calculations()
         self.models: dict = {}
-        self.isDragging = False
-        
-        self.tabs = []
+        self.tabs: dict = {}
+        self.isDragging:bool = False
         
         # Настройка интерфейса
         dpg.create_context()
@@ -193,22 +52,6 @@ class Window:
     def key_down_handler(self, sender, app_data, user_data):
         if not self.current_model:
             return
-        
-        if app_data == dpg.mvKey_LShift:
-            self.current_model.rotate_x(1)
-        if app_data == dpg.mvKey_ModCtrl:
-            self.current_model.rotate_x(-1)
-
-        if app_data == dpg.mvKey_W:
-            self.current_model.rotate_y(1)
-        if app_data == dpg.mvKey_S:
-            self.current_model.rotate_y(-1)
-
-        if app_data == dpg.mvKey_A:
-            self.current_model.rotate_z(1)
-        if app_data == dpg.mvKey_D:
-            self.current_model.rotate_z(-1)            
-
 
         if app_data == dpg.mvKey_Q:
             self.current_model.x = self.current_model.x - 30
@@ -216,13 +59,16 @@ class Window:
             self.current_model.x = self.current_model.x + 30
 
     def mouse_drag_handler(self, sender, app_data, user_data):
-        
-        if self.current_model:
-            dx, dy = dpg.get_mouse_drag_delta()
-            self.current_model.rotate_x(dx/100)
-            self.current_model.rotate_y(dy/100)
-
-            # self.current_model.set_pos(Vector(dx/2 - W//2, dy/2 - H//2, 0))
+        pass   
+        # if self.current_model:
+        #     dx, dy = dpg.get_mouse_drag_delta()
+        #     # print(dpg.get_drawing_mouse_pos())
+        #     print(dx, dy)
+        #     f = Vector(dx, dy) 
+        #     current_pos = self.current_model.get_pos()
+        #     delta = current_pos + f/2
+        #     self.current_model.set_pos(Vector(delta.x, delta.y))
+        #     print(self.current_model.get_pos())
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
         if self.current_model and app_data == dpg.mvMouseButton_Left:
@@ -305,46 +151,162 @@ class Window:
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
         self.current_model.load_model(app_data.get("file_path_name"))
-        self.models.update({self.current_model.name: self.current_model})
-        self.create_tab(self.current_model.name)
+        self.create_tab(self.current_model)
 
     # Функция для проверки активного таба
     def tab_change_callback(self, sender, app_data, user_data):
-        self.current_model = self.models[app_data]
         print(f"Active tab: {app_data}")
+        print(self.models)
+        self.current_model = self.tabs.get(app_data).model
 
     def calculate(self):
-
+        
         if self.current_model.dsi < 0:
             raise Exception("DSI < 0; Something went wrong")
         elif self.current_model.dsi == 0:
             print("DSI = 0; Система статически определимая")
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
-            base_model = self.current_model # Один и тот же объект
-            for i in self.current_model.data.get("supports"):
-                pass
             
+            eq_models = [self.current_model.copy() for _ in range(self.current_model.dsi)]
             
-        for element in self.current_model.data.get("elements"):
-            L = (element.end_node.point - element.start_node.point).norm()  # длина балки, м
-            dx = 0.01
+            base_model = self.current_model.copy()
+            for em in eq_models:
+                em.data.get("loads").clear()
+            
+            sups = base_model.data.get("supports")
 
-            x = np.arange(0, L + dx, dx)
-            # --- Нагрузки ---
-            point_loads = []  # (позиция, сила в кН)
-            distributed_loads = []   # (от, до, q кН/м)
-            moments = []                # (позиция, момент в кН·м), отриц — по часовой
+            fixed_n = 0
+            roller_n = 0
+            pinned_n = 0
+
+            for sup in sups:
+                if isinstance(sup, Fixed):
+                    fixed_n += 1
+                elif isinstance(sup, Roller):
+                    roller_n += 1
+                elif isinstance(sup, Pinned):
+                    pinned_n += 1
+                        
+            if fixed_n == 0 and pinned_n == 0:
+                raise Exception("Конструкция является механизмом")
+
+            if fixed_n != 0:
+                for sup in sups:
+                    if isinstance(sup, Fixed):
+                        tmp = sup
+                        break
+                sups.clear()
+                sups.append(tmp)
+                
+            if pinned_n == 1:
+                r = None
+                p = None
+                for sup in sups:
+                    if isinstance(sup, Roller):
+                        r = sup
+                    
+                    if isinstance(sup, Pinned):
+                        p = sup
+                a = 0
+                for sup in sups:
+                    if sup != r and sup != p:
+                        
+                        eq_models[a].data.get("loads").append(Force(-10, sup.node, sup.direction * -1))
+                        a += 1
+                
+                sups.clear()
+                sups.append(r)
+                sups.append(p)
             
-            for load in self.current_model.data.get("loads"):
-                if load.node in [element.start_node, element.end_node]:
-                    if isinstance(load, DistributedForce):
-                        distributed_loads.append([load.node.point.x- load.lenght/2, load.node.point.x + load.lenght/2, load.force])
-                    if isinstance(load, Force):
-                        point_loads.append([load.node.point.x, load.force])
-                    if isinstance(load, Momentum):
-                        moments.append([load.node.point.x, load.force])
+            if pinned_n > 1:
+                pinneds = []
+                for sup in sups:
+                    if isinstance(sup, Pinned):
+                        pinneds.append(sup)
+                    
+                    if len(pinneds) == 2:
+                        break
+                    
+                sups.clear()
+                sups.append(pinneds[0])
+                sups.append(Roller(node=pinneds[1].node, direction=pinneds[1].direction))
+
+            base_model.data.update({"supports": sups})
+            for em in eq_models:
+                em.data.update({"supports": sups})
+
+        M1Vb, M1Mb = self.calc.calc(base_model)
+        diag = Diagram(1001, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Vb)
+        diag2 = Diagram(1002, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Mb)
+        diagrams = []
+        diagrams.append(diag)
+        diagrams.append(diag2)
+        base_model.diagrams = diagrams
+        base_model.name += "_diagram"
+        self.create_tab(base_model)
+       
+        M1Ves = []
+        M1Mes = []
+        for i, em in enumerate(eq_models):
+            M1Ve, M1Me = self.calc.calc(em)
+            print(M1Ve, M1Me)
+            M1Ves.append(M1Ve)
+            M1Mes.append(M1Me)
+
+        for i, em in enumerate(eq_models):
             
+            diag = Diagram(100+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Ves[i])
+            diag2 = Diagram(102+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Mes[i])
+            diagrams = []
+            diagrams.append(diag)
+            diagrams.append(diag2)
+            em.diagrams = diagrams
+            em.name += f"eq_diagram X{i+1}"  
+            self.create_tab(em)
+
+        dx = float(config("DX"))
+
+        if len(M1Mes) == 1:
+                
+            s = 0
+            for x, _ in enumerate(M1Mes[0]):
+                s += M1Mes[0][x] * M1Mes[0][x]
+            d11 = s * dx
+            s = 0
+            for x, _ in enumerate(M1Mb):
+                s += M1Mes[0][x] * M1Mb[x]
+        
+            d1p = s * dx
+            
+            res = - d1p / d11
+            print(f"res: {res}, d1p: {d1p}, d11:{d11}")
+
+        if len(M1Mes) >= 2:
+
+            deltas = [[0, 0], [0, 0]]
+            B = [[0, 0]]
+            for i in range(len(M1Mes)):
+                for j in range(len(M1Mes)):
+                    s = 0
+                    for x, _ in enumerate(M1Mes[i]):
+                        s += mult(M1Mes[i], M1Mes[j], x)
+                    
+                    deltas[i][j] = s * dx
+                    
+            for i in range(len(M1Mes)):
+                s = 0
+                for x, _ in enumerate(M1Mb):
+                    s += mult(M1Mb, M1Mes[i], x)
+                B[0][i] = s * dx        
+            
+            print(B)
+            print(deltas)
+            b = Matrix(B)
+            delts = Matrix(deltas).inverse()
+
+            print(b * delts)
+        
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
         print("App Data: ", app_data)
@@ -360,10 +322,12 @@ class Window:
         ):
             dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
-    def create_tab(self):
+    def create_tab(self, model:Model):
+        tab = Tab(model)
+        self.tabs.update({tab.tab_id:tab})
+        self.models.update({model.name: model})
 
-        self.tabs.append(Tab(self.current_model))        
-
+        return tab.tab_id
         # dpg.delete_item("file_dialog_id")
 
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
@@ -539,7 +503,7 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.6", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.9", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
@@ -557,9 +521,8 @@ class Window:
                     with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
                         if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
                             self.current_model = Model()
-                            self.current_model.load_model("/home/denour/Develop/Diplom/models/model4.mdl")
-                            self.models.update({self.current_model.name: self.current_model})
-                            self.create_tab()
+                            self.current_model.load_model(config("DEFAULT_MODEL"))
+                            self.create_tab(self.current_model)
                         
                 # Правый блок — Инспектор
                 # Inspector()
@@ -573,7 +536,7 @@ class Window:
         # Регистрируем шрифт
         with dpg.font_registry():
             # Первый параметр - размер, второй - путь к файлу шрифта
-            default_font = dpg.add_font("/home/denour/Develop/cpp/fps/assets/font/arial.ttf", 16)
+            default_font = dpg.add_font(config("FONT"), 16)
 
         # Устанавливаем шрифт по умолчанию для всех элементов
         dpg.bind_font(default_font)

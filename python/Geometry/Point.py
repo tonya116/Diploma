@@ -1,57 +1,53 @@
 from Geometry.Vector import Vector
 from Geometry.Matrix import Matrix
 class Point:
-    def __init__(self, x = 0, y = 0, z = 0):
+    def __init__(self, x = 0, y = 0):
         self.x = x
         self.y = y
-        self.z = z
         
     def __dict__(self):
-        return [self.x, self.y, self.z]
+        return [self.x, self.y]
     def __add__(self, other):
-        tmp = Point(self.x, self.y, self.z)
+        tmp = Point(self.x, self.y)
         tmp.x += other.x
         tmp.y += other.y
-        tmp.z += other.z
         return tmp
     
     def __sub__(self, other):
-        tmp = Vector(self.x, self.y, self.z)
+        tmp = Vector(self.x, self.y)
         tmp.x -= other.x
         tmp.y -= other.y
-        tmp.z -= other.z
         return tmp    
-    
     def __matmul__(self, matrix):
-        """Умножение точки на матрицу (используется оператор @)."""
+        """Умножение 2D точки на матрицу (оператор @)."""
         if not isinstance(matrix, Matrix):
             raise TypeError("Ожидается объект класса Matrix")
         
-        # Преобразуем точку в однородные координаты [x, y, z, 1]
-        homogeneous_point = [self.x, self.y, self.z, 1]
+        # Преобразуем точку в однородные координаты [x, y, 1] для 2D
+        homogeneous_point = [self.x, self.y, 1]
         
-        # Умножаем матрицу на вектор-столбец (транспонируем точку)
+        # Умножаем матрицу на вектор-столбец
         result = [0] * matrix.cols
         for i in range(matrix.rows):
-            for j in range(matrix.cols):
+            for j in range(min(matrix.cols, 3)):  # Обрабатываем только первые 3 элемента
                 result[i] += homogeneous_point[j] * matrix.data[i][j]
         
-        # Если матрица 3x3 (без трансляции), отбрасываем последний элемент
-        if matrix.rows == 3 and matrix.cols == 3:
-            return Point(result[0], result[1], result[2])
-        # Для матрицы 4x4 (с трансляцией) нормализуем однородные координаты
-        elif matrix.rows == 4 and matrix.cols == 4:
-            w = result[3]
-            return Point(result[0]/w, result[1]/w, result[2]/w)
+        # Обработка разных размеров матриц
+        if matrix.rows == 2 and matrix.cols == 2:
+            # Матрица 2x2 (линейное преобразование без трансляции)
+            return Point(result[0], result[1])
+        elif matrix.rows == 3 and matrix.cols == 3:
+            # Матрица 3x3 (аффинное преобразование с трансляцией)
+            w = result[2] if result[2] != 0 else 1  # Избегаем деления на 0
+            return Point(result[0]/w, result[1]/w)
         else:
-            raise ValueError("Матрица должна быть размером 3x3 или 4x4")
-        
-        
+            raise ValueError("Матрица должна быть размером 2x2 или 3x3 для 2D преобразований")
+            
     def __str__(self):
-        return f"Point: x={self.x}, y={self.y}, z={self.z}"
+        return f"Point: x={self.x}, y={self.y}"
     
     def __repr__(self):
-        print(self.__str__())
+        return self.__str__()
     
     def asList(self):
-        return [self.x, self.y, self.z]
+        return [self.x, self.y]

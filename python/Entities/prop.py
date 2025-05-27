@@ -16,7 +16,7 @@ class Support(Object):
         return f"Node: {self.node}, Direction: {self.direction}"
 
     def __repr__(self):
-        return super().__dict__().update(self.__dict__())
+        return self.__str__()
          
     def __dict__(self):
         return {"node": self.node.id, "direction": self.direction.__dict__}
