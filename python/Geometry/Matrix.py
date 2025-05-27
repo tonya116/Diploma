@@ -122,6 +122,58 @@ class Matrix:
         """Проверка, является ли матрица квадратной."""
         return self.rows == self.cols
 
+    
+    def inverse(self):
+        """Вычисляет обратную матрицу."""
+        if not self.is_square():
+            raise ValueError("Обратная матрица существует только для квадратных матриц")
+        
+        det = self.determinant()
+        if det == 0:
+            raise ValueError("Матрица вырождена (определитель равен 0), обратной не существует")
+        
+        n = self.rows
+        
+        # Для матриц 2x2 используем упрощенную формулу
+        if n == 2:
+            a, b = self.data[0][0], self.data[0][1]
+            c, d = self.data[1][0], self.data[1][1]
+            inv_det = 1.0 / det
+            return Matrix([
+                [d * inv_det, -b * inv_det],
+                [-c * inv_det, a * inv_det]
+            ])
+        
+        # Для матриц большего размера используем метод алгебраических дополнений
+        # Создаем матрицу алгебраических дополнений (союзную матрицу)
+        cofactor_matrix = [
+            [0 for _ in range(n)] 
+            for _ in range(n)
+        ]
+        
+        for i in range(n):
+            for j in range(n):
+                # Получаем минор для элемента (i,j)
+                minor = [
+                    [self.data[row][col] for col in range(n) if col != j]
+                    for row in range(n) if row != i
+                ]
+                minor_matrix = Matrix(minor)
+                
+                # Алгебраическое дополнение
+                cofactor = (-1) ** (i + j) * minor_matrix.determinant()
+                cofactor_matrix[j][i] = cofactor  # Транспонируем сразу
+        
+        # Умножаем союзную матрицу на 1/det
+        inv_det = 1.0 / det
+        inverse_matrix = [
+            [cofactor_matrix[i][j] * inv_det for j in range(n)]
+            for i in range(n)
+        ]
+        
+        return Matrix(inverse_matrix)
+    
+    
 class TranslationMatrix(Matrix):
     def __init__(self, dirVec: Vector = Vector()):
         self.data = [[1, 0, dirVec.x], [0, 1, dirVec.y], [0, 0, 1]]
@@ -156,3 +208,4 @@ class RotationMatrix(Matrix):
     def rotation_angle(self):
         """Возвращает угол поворота в радианах"""
         return atan2(self.data[1][0], self.data[0][0])
+    
