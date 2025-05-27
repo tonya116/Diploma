@@ -1,6 +1,7 @@
 ﻿#include "matrix.h"
 #include "calculations.h"
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 
 double f(double x){
@@ -8,14 +9,26 @@ double f(double x){
   return y;
 }
 
-int main() {
+int main() {  
+  Matrix* point_loads = new Matrix{};
+  Matrix* distributed_loads = new Matrix{{7, 10, 40}};
+  Matrix* moments = new Matrix{{5, -60}};
+  double L = 10;
+  double dx = 0.01;
+  size_t size = (int)(L / dx);
+  double x[size];
+  double V[size];
+  double M[size];
 
-  
-  Matrix point_loads = {{4, -30}};
-  Matrix distributed_loads = {{0, 2, -10}};
-  Matrix moments = {{2, 20}};
+  for (int i = 0; i < size; i++) {
+    x[i] = i*dx;
+  }
 
+  diagram_calc(L, x, size, V, M, point_loads, distributed_loads, moments);
 
+  for (int i = 0; i < size; i++) {
+    printf("%f, %f\n", V[i], M[i]);
+  }
 
   return 0;
 }
