@@ -103,7 +103,7 @@
             "type": "momentum",
             "momentum": [
                 0,
-                60
+                -60
             ]
         }
         
