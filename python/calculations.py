@@ -68,7 +68,6 @@ class Calculations:
                 point_loads.append([load.node.point.x, load.force])
             if isinstance(load, Momentum):
                 moments.append([load.node.point.x, load.force])
-        print(point_loads, distributed_loads, moments)
 
         point_loadsM = self.lib.Matrix_create(0, 0)
 
@@ -101,24 +100,9 @@ class Calculations:
         
         # Вызываем функцию
         self.lib.diagram_calc(L, x, x.size, M1V, M1M, point_loadsM, distributed_loadsM, momentsM)  
-        print(len(M1M), len(M1V))
-        diag = Diagram(-1, start_node, end_node, M1V)
-        diag2 = Diagram(0, start_node, end_node, M1M)
-        diagrams = []
-        diagrams.append(diag.geometry())
-        diagrams.append(diag2.geometry())
-        
+      
         self.lib.Matrix_destroy(point_loadsM)
         self.lib.Matrix_destroy(distributed_loadsM)
         self.lib.Matrix_destroy(momentsM)
 
-        return diagrams
-
-    def center_of_mass_1d(values, dx=0.01):
-        total_mass = 0.0
-        cx = 0.0
-        for i, v in enumerate(values):
-            x = i * dx
-            cx += x * v
-            total_mass += v
-        return cx / total_mass if total_mass else None
+        return M1V, M1M

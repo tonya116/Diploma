@@ -16,6 +16,7 @@ from Entities.momentum import Momentum
 
 from Geometry.Vector import Vector
 from Geometry.Point import Point
+from Entities.diagrams import Diagram
 
 
 class Model:
@@ -32,7 +33,7 @@ class Model:
         self.name = None
         self.filename = None
         self.draw_node_id = dpg.generate_uuid()
-        self.diagrams = []
+        self.diagrams: list[Diagram] = [] 
         
         self.proj = dpg.create_orthographic_matrix(0, 1, 0, 1, 0, 1)
 
@@ -64,9 +65,7 @@ class Model:
                 
         for sup in self.data.get("supports"):
             self.dsi += sup.dof
-        
-        print(f"Степень статической неопределимости: {self.dsi}")
-        
+                
     def __parse_model(self, data:dict):
         
         nodes = []
