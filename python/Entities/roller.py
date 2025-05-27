@@ -29,7 +29,7 @@ class Roller(Support):
         self.primitives.clear()
         
         mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix(-3.1415)
+        mr = RotationMatrix()
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt

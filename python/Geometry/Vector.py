@@ -11,6 +11,12 @@ class Vector:
         tmp.y += other.y
         return tmp
     
+    def __sub__(self, other):
+        tmp = Vector(self.x, self.y)
+        tmp.x -= other.x
+        tmp.y -= other.y
+        return tmp
+    
     def __mul__(self, scalar):
         tmp = Vector(self.x, self.y)
         tmp.x *= scalar
@@ -30,7 +36,7 @@ class Vector:
         return f"Vector: x={self.x}, y={self.y}"
     
     def __repr__(self):
-        print(self.__str__())
+        return self.__str__()
     
     def cross(self, other):
         raise Exception("Not impl")

@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 from pydantic import BaseModel
 from Entities.force import Force
 from Entities.distributed_force import DistributedForce
-
+from config import config
 from Entities.node import Node, NodeModel
 from Entities.element import Element
 from Entities.fixed import Fixed
@@ -16,6 +16,7 @@ from Entities.momentum import Momentum
 
 from Geometry.Vector import Vector
 from Geometry.Point import Point
+from Entities.diagrams import Diagram
 
 
 class Model:
@@ -23,10 +24,6 @@ class Model:
 
         self.x = 0
         self.y = 0
-
-        self.x_rot = 0
-        self.y_rot = 0
-        self.z_rot = 0
         
         self.scale = 1
         
@@ -36,7 +33,7 @@ class Model:
         self.name = None
         self.filename = None
         self.draw_node_id = dpg.generate_uuid()
-        self.diagrams = []
+        self.diagrams: list[Diagram] = [] 
         
         self.proj = dpg.create_orthographic_matrix(0, 1, 0, 1, 0, 1)
 
@@ -49,16 +46,7 @@ class Model:
         self.y = point.y
 
     def get_pos(self):
-        return [self.x, self.y]
-
-    def rotate_x(self, angle):
-        self.x_rot += angle
-
-    def rotate_y(self, angle):
-        self.y_rot += angle
-
-    def rotate_z(self, angle):
-        self.z_rot += angle
+        return Vector(self.x, self.y)
 
     def load_model(self, filename:str):
         self.filename = filename
@@ -77,9 +65,7 @@ class Model:
                 
         for sup in self.data.get("supports"):
             self.dsi += sup.dof
-        
-        print(f"Степень статической неопределимости: {self.dsi}")
-        
+                
     def __parse_model(self, data:dict):
         
         nodes = []
@@ -136,9 +122,6 @@ class Model:
         self.model_matrix = (
             
             dpg.create_translation_matrix([self.x, self.y])
-            * dpg.create_rotation_matrix(math.radians(self.x_rot), [1, 0, 0])
-            * dpg.create_rotation_matrix(math.radians(self.y_rot), [0, 1, 0])
-            * dpg.create_rotation_matrix(math.radians(self.z_rot), [0, 0, 1])
             * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
         )
         dpg.apply_transform(
@@ -156,6 +139,6 @@ class Model:
     
     def copy(self):
         tmp = Model()
-        tmp.load_model("/home/denour/Develop/Diplom/models/model5.mdl")
+        tmp.load_model(config("DEFAULT_MODEL"))
         return tmp
     

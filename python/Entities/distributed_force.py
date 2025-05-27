@@ -14,20 +14,21 @@ class DistributedForce(Load):
 
         self.lenght = lenght
 
-        self.ctrlPoints.append(Point(-self.lenght/2, -2, 0))
-        self.ctrlPoints.append(Point(self.lenght/2, -2, 0))
+        self.ctrlPoints.append(Point(-self.lenght/2, -2))
+        self.ctrlPoints.append(Point(self.lenght/2, -2))
         
         n = 4
         step = self.lenght/n
         for i in range(-n//2, n//2+1):
-            self.ctrlPoints.append(Point(i * step, 0, 0))
-            self.ctrlPoints.append(Point(i * step, -2, 0))
+            self.ctrlPoints.append(Point(i * step, 0))
+            self.ctrlPoints.append(Point(i * step, -2))
             
     def __str__(self):
         return f"Element: {self.node}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
 
     def __repr__(self):
-        return super().__dict__().update(self.__dict__())
+        return self.__str__()
+
          
     def __dict__(self):
         return {"lenght": self.lenght}
@@ -36,7 +37,7 @@ class DistributedForce(Load):
         self.primitives.clear()
 
         mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix(3.1415/2)
+        mr = RotationMatrix()
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt

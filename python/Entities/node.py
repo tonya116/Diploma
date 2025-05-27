@@ -23,7 +23,7 @@ class Node(Object):
         return f"ID: {self.id}, Point: {self.point}"
     
     def __repr__(self):
-        return self.__dict__()
+        return self.__str__()
     
     def __dict__(self):
         return {"id": self.id, "coordinates": self.point.__dict__()}

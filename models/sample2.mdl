@@ -10,28 +10,35 @@
         {
             "id": 2,
             "coordinates": [
-                1,
+                3,
                 0
             ]
         },
         {
             "id": 3,
             "coordinates": [
-                2,
+                5,
                 0
             ]
         },
         {
             "id": 4,
             "coordinates": [
-                3,
+                7,
                 0
             ]
         },
         {
             "id": 5,
             "coordinates": [
-                4,
+                8.5,
+                0
+            ]
+        },
+        {
+            "id": 6,
+            "coordinates": [
+                10,
                 0
             ]
         }
@@ -64,6 +71,13 @@
             "end_node": 5,
             "type": "beam",
             "material": "steel"
+        },
+        {
+            "id": 5,
+            "start_node": 5,
+            "end_node": 6,
+            "type": "beam",
+            "material": "steel"
         }
     ],
     "materials": {
@@ -75,23 +89,24 @@
     "loads": [
         {
             "id": 1,
-            "node": 4,
-            "type": "force",
+            "node": 5,
+            "type": "distributed_force",
+            "lenght": 3,
             "direction": [
                 0,
-                10
+                40
             ]
-        },
+        },  
         {
             "id": 2,
-            "node": 2,
-            "type": "distributed_force",
-            "lenght": 2,
-            "direction": [
+            "node": 3,
+            "type": "momentum",
+            "momentum": [
                 0,
-                10
+                60
             ]
         }
+        
     ],
     "supports": [
         {
@@ -102,13 +117,19 @@
         },
         {
             "id": 2,
-            "node": 3,
+            "node": 2,
             "type": "roller",
             "direction": [0, 1]
         },
         {
             "id": 3,
-            "node": 5,
+            "node": 4,
+            "type": "roller",
+            "direction": [0, 1]
+        },
+        {
+            "id": 4,
+            "node": 6,
             "type": "roller",
             "direction": [0, 1]
         }
