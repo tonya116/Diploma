@@ -14,4 +14,4 @@ class Line(Entity):
         return f"Line: p1={self.p1}, p2={self.p2}"
     
     def __repr__(self):
-        print(self.__str__())
+        return self.__str__()

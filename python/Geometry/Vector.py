@@ -36,7 +36,7 @@ class Vector:
         return f"Vector: x={self.x}, y={self.y}"
     
     def __repr__(self):
-        print(self.__str__())
+        return self.__str__()
     
     def cross(self, other):
         raise Exception("Not impl")

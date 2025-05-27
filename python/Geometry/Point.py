@@ -47,7 +47,7 @@ class Point:
         return f"Point: x={self.x}, y={self.y}"
     
     def __repr__(self):
-        print(self.__str__())
+        return self.__str__()
     
     def asList(self):
         return [self.x, self.y]
