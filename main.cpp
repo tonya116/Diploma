@@ -10,12 +10,12 @@ double f(double x){
 }
 
 int main() {  
-  Matrix* point_loads = new Matrix{};
+  Matrix* point_loads = new Matrix{{3, -28.75}, {7,  93.75}};
   Matrix* distributed_loads = new Matrix{{7, 10, 40}};
-  Matrix* moments = new Matrix{{5, -60}};
+  Matrix* moments = new Matrix{{5, 60}};
   double L = 10;
   double dx = 0.01;
-  size_t size = (int)(L / dx);
+  size_t size = (int)(L / dx)+1;
   double x[size];
   double V[size];
   double M[size];
