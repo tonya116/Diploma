@@ -35,6 +35,8 @@ def mult(a1, a2, index):
     return a1[index] * a2[index]
 
 
+E = 210e9       # Па, например, для стали
+I = 1e-6        # м^4, примерное значение
 class Window:
     def __init__(self):
         
@@ -159,6 +161,16 @@ class Window:
         print(self.models)
         self.current_model = self.tabs.get(app_data).model
 
+    def build_diagram(self, model, V, M):
+        diag = Diagram(1001, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=V)
+        diag2 = Diagram(1002, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M)
+        diagrams = []
+        diagrams.append(diag)
+        diagrams.append(diag2)
+        model.diagrams = diagrams
+        model.name += "_diagram"
+        self.create_tab(model)
+
     def calculate(self):
         
         if self.current_model.dsi < 0:
@@ -168,7 +180,9 @@ class Window:
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
             
-            eq_models = [self.current_model.copy() for _ in range(self.current_model.dsi)]
+            dsi = self.current_model.dsi
+            
+            eq_models = [self.current_model.copy() for _ in range(dsi)]
             
             base_model = self.current_model.copy()
             for em in eq_models:
@@ -205,14 +219,13 @@ class Window:
                 for sup in sups:
                     if isinstance(sup, Roller):
                         r = sup
-                    
                     if isinstance(sup, Pinned):
                         p = sup
                 a = 0
                 for sup in sups:
                     if sup != r and sup != p:
                         
-                        eq_models[a].data.get("loads").append(Force(-10, sup.node, sup.direction * -1))
+                        eq_models[a].data.get("loads").append(Force(-10, sup.node, sup.direction))
                         a += 1
                 
                 sups.clear()
@@ -237,14 +250,8 @@ class Window:
                 em.data.update({"supports": sups})
 
         M1Vb, M1Mb = self.calc.calc(base_model)
-        diag = Diagram(1001, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Vb)
-        diag2 = Diagram(1002, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Mb)
-        diagrams = []
-        diagrams.append(diag)
-        diagrams.append(diag2)
-        base_model.diagrams = diagrams
-        base_model.name += "_diagram"
-        self.create_tab(base_model)
+        
+        self.build_diagram(base_model, M1Vb, M1Mb) 
        
         M1Ves = []
         M1Mes = []
@@ -255,15 +262,8 @@ class Window:
             M1Mes.append(M1Me)
 
         for i, em in enumerate(eq_models):
-            
-            diag = Diagram(100+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Ves[i])
-            diag2 = Diagram(102+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M1Mes[i])
-            diagrams = []
-            diagrams.append(diag)
-            diagrams.append(diag2)
-            em.diagrams = diagrams
             em.name += f"eq_diagram X{i+1}"  
-            self.create_tab(em)
+            self.build_diagram(em, M1Ves[i], M1Mes[i]) 
 
         dx = float(config("DX"))
 
@@ -276,28 +276,41 @@ class Window:
             s = 0
             for x, _ in enumerate(M1Mb):
                 s += M1Mes[0][x] * M1Mb[x]
-        
             d1p = s * dx
             
             res = - d1p / d11
-            print(f"res: {res}, d1p: {d1p}, d11:{d11}")
+            print(f"X1: {res}, d1p: {d1p}, d11:{d11}")
+            s = 0
+            T = []
+            for x, _ in enumerate(M1Mes[0]):
+                T.append(M1Mes[0][x]*2.81 + M1Mb[x])
+            
+            temporal = base_model.copy()
+
+            diag = Diagram(100+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=T)
+            diagrams = []
+            diagrams.append(diag)
+            temporal.diagrams = diagrams
+            temporal.name += f"Temp_diagram X{i+1}"  
+            self.create_tab(temporal)
 
         if len(M1Mes) >= 2:
 
             deltas = [[0, 0], [0, 0]]
             B = [[0, 0]]
-            for i in range(len(M1Mes)):
-                for j in range(len(M1Mes)):
+            
+            for i in range(dsi):
+                for j in range(dsi):
                     s = 0
                     for x, _ in enumerate(M1Mes[i]):
-                        s += mult(M1Mes[i], M1Mes[j], x)
+                        s += M1Mes[i][x] * M1Mes[j][x]
                     
                     deltas[i][j] = s * dx
                     
-            for i in range(len(M1Mes)):
+            for i in range(dsi):
                 s = 0
                 for x, _ in enumerate(M1Mb):
-                    s += mult(M1Mb, M1Mes[i], x)
+                    s += M1Mes[i][x] * M1Mb[x]
                 B[0][i] = s * dx        
             
             print(B)
@@ -306,7 +319,9 @@ class Window:
             delts = Matrix(deltas).inverse()
 
             print(b * delts)
-        
+                    
+
+
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
         print("App Data: ", app_data)
@@ -503,7 +518,7 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.9", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.10", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
