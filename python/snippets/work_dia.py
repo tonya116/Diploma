@@ -41,7 +41,7 @@ RB = -moment_sum / L
 
 # --- RA из равновесия по вертикали ---
 total_vertical = sum(P for _, P in point_loads) + sum(q*(x2-x1) for x1, x2, q in distributed_loads)
-RA = - total_vertical - RB
+RA = -total_vertical - RB
 
 # --- Эпюры ---
 V = np.zeros_like(x)
@@ -49,29 +49,29 @@ M = np.zeros_like(x)
 
 # for ui in u:
 for i, xi in enumerate(x):
-        v = RA
-        m = RA * xi
+    v = RA
+    m = RA * xi
 
-        for pos, P in point_loads:
-            if xi >= pos:
-                v += P
-                m += P * (xi - pos)
+    for pos, P in point_loads:
+        if xi >= pos:
+            v += P
+            m += P * (xi - pos)
 
-        for x1, x2, q in distributed_loads:
-            if xi >= x1:
-                if xi <= x2:
-                    v += q * (xi - x1)
-                    m += q * (xi - x1)**2 / 2
-                else:
-                    v += q * (x2 - x1)
-                    m += q * (x2 - x1) * (xi - (x1 + x2)/2)
+    for x1, x2, q in distributed_loads:
+        if xi >= x1:
+            if xi <= x2:
+                v += q * (xi - x1)
+                m += q * (xi - x1)**2 / 2
+            else:
+                v += q * (x2 - x1)
+                m += q * (x2 - x1) * (xi - (x1 + x2)/2)
 
-        for pos, M0 in moments:
-            if xi >= pos:
-                m += -M0  # прибавляем сосредоточенный момент
+    for pos, M0 in moments:
+        if xi >= pos:
+            m += -M0  # прибавляем сосредоточенный момент
 
-        V[i] = v
-        M[i] = m
+    V[i] = v
+    M[i] = m
 
 # --- Графики ---
 plt.figure(figsize=(12, 6))

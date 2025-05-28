@@ -20,6 +20,7 @@ def draw(primitive, node_id):
             color=primitive.color,
             thickness=primitive.thickness,
             parent=node_id,
+            size=0.5
         )
     elif isinstance(primitive, Circle):
         dpg.draw_circle(

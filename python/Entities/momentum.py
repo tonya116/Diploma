@@ -21,7 +21,7 @@ class Momentum(Load):
         self.ctrlPoints.append(Point(-1, 1))
 
     def __str__(self):
-        return f"Node: {self.node}, Direction: {self.direction}, Momentum: {self.force}"
+        return f"Momentum: {self.node}, Direction: {self.direction}, Momentum: {self.force}"
 
     def geometry(self):
         self.primitives.clear()
@@ -32,7 +32,7 @@ class Momentum(Load):
         
         
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 2))
-        self.primitives.append(Arrow(self.ctrlPoints[1].asList(), self.ctrlPoints[2].asList(), eval(config("ForceColor")), 2))
-        self.primitives.append(Arrow(self.ctrlPoints[0].asList(), self.ctrlPoints[3].asList(), eval(config("ForceColor")), 2))
+        self.primitives.append(Arrow(self.ctrlPoints[3].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 2))
+        self.primitives.append(Arrow(self.ctrlPoints[2].asList(), self.ctrlPoints[0].asList(), eval(config("ForceColor")), 2))
 
         return self.primitives

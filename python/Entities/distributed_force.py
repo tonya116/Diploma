@@ -24,7 +24,7 @@ class DistributedForce(Load):
             self.ctrlPoints.append(Point(i * step, -2))
             
     def __str__(self):
-        return f"Element: {self.node}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
+        return f"DF: {self.node}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
 
     def __repr__(self):
         return self.__str__()
