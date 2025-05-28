@@ -17,63 +17,69 @@ double integral(double (*func)(double), double a, double b, double step) {
 
 extern "C" void reactions_calc(double &RA, double &RB, const double L, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments) {
   double moment_sum = 0;
-  double center;
-
+  double total_vertical = 0;
 
   for (auto &force : point_loads->_matrix) {
-    moment_sum += force[1] * (force[0] - 0);
+    total_vertical -= force[1];
+    moment_sum -= force[1] * force[0];
+    
   }
   for (auto &dl : distributed_loads->_matrix) {
     double w = dl[2] * (dl[1] - dl[0]);
     double center = (dl[0] + dl[1]) / 2;
-    moment_sum += w * (center - 0);
+    total_vertical += w;
+    moment_sum += w * center;
+    
   }
   for (auto &moment : moments->_matrix) {
     moment_sum += moment[1];
   }
 
-  RB = -moment_sum / L; 
-
-  double total_vertical = 0;
-
-  for (auto &force : point_loads->_matrix) {
-    total_vertical += force[1];
-  }
-  for (auto &dl : distributed_loads->_matrix) {
-    total_vertical += dl[2] * (dl[1] - dl[0]);
-  }
-
-  RA = -total_vertical - RB;
+  RB = moment_sum / L; 
+  RA = total_vertical - RB;
 }
 
 extern "C" void diagram_calc(double L, double *x, size_t size, double *V,
                              double *M, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments) {
   double v, m;
+  double RA = 0, RB = 0;
+  reactions_calc(RA, RB, L, point_loads, distributed_loads, moments);
+
+  std::cout << RA << " " << RB << std::endl;
 
   for (int i = 0; i < size; i++) {
-    v = 0;
-    m = 0;
+    v = RA;
+    m = RA * x[i];
     for (auto &force : point_loads->_matrix) {
-      if (x[i] >= force[0]) {
-        v += force[1];
-        m += force[1] * (x[i] - force[0]);
+      double l = force[0];
+      double f = force[1];
+      if (x[i] >= l) {
+        v += f;
+        m += f * (x[i] - l);
       }
     }
+
     for (auto &dl : distributed_loads->_matrix) {
-      if (x[i] >= dl[0]) {
-        if (x[i] <= dl[1]) {
-          v += dl[2] * (x[i] - dl[0]);
-          m += dl[2] * powf(x[i] - dl[0], 2) / 2;
+
+      double start = dl[0];
+      double end = dl[1];
+      double force = dl[2];
+
+      if (x[i] >= start) {
+        if (x[i] <= end) {
+          v -= force * (x[i] - start);
+          m -= force * powf(x[i] - start, 2) / 2;
         } else {
-          v += dl[2] * (dl[1] - dl[0]);
-          m += dl[2] * (dl[1] - dl[0]) * (x[i] - (dl[0] + dl[1]) / 2);
+          v += force * (end - start);
+          m += force * (end - start) * (x[i] - (start + end) / 2);
         }
       }
     }
     for (auto &moment : moments->_matrix) {
-
-      if (x[i] >= moment[0]) {
-        m += -moment[1];
+      double l = moment[0];
+      double mom = moment[1];
+      if (x[i] >= l) {
+        m += mom;
       }
     }
 
