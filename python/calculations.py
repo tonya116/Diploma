@@ -15,7 +15,7 @@ class Calculations:
     def __init__(self):
         
         # Загружаем библиотеку
-        self.lib = ctypes.CDLL('build/src/libcalculations.so')
+        self.lib = ctypes.CDLL(config("DLL_PATH"))
 
         # Объявляем тип Matrix*
         class Matrix(ctypes.Structure):
@@ -54,32 +54,24 @@ class Calculations:
         
         start_node = nodes[0]
         end_node = nodes[-1]
-        L = (end_node.point - start_node.point).norm()  # длина балки, м
-        x = np.arange(0, L + float(config("DX")), float(config("DX")))
+        lenght = (end_node.point - start_node.point).norm()  # длина балки, м
+        x = np.arange(0, lenght + float(config("DX")), float(config("DX")))
         # --- Нагрузки ---
-        point_loads = []  # (позиция, сила в кН)
-        distributed_loads = []   # (от, до, q кН/м)
-        moments = []                # (позиция, момент в кН·м), отриц — по часовой
-        
+        point_loads = [] # (позиция, сила в кН)
+        distributed_loads = [] # (от, до, q кН/м)
+        moments = [] # (позиция, момент в кН·м), отриц — по часовой
+
         for load in model.data.get("loads"):
             if isinstance(load, DistributedForce):
-                distributed_loads.append([load.node.point.x - load.lenght/2, load.node.point.x + load.lenght/2, load.force])
+                distributed_loads.append([load.node.point.x - load.lenght/2, load.node.point.x + load.lenght/2, load.direction.y])
             if isinstance(load, Force):
-                point_loads.append([load.node.point.x, load.force])
+                point_loads.append([load.node.point.x, load.direction.y])
             if isinstance(load, Momentum):
-                moments.append([load.node.point.x, load.force])
+                moments.append([load.node.point.x, load.direction.y])
 
-        point_loadsM = self.lib.Matrix_create(0, 0)
-
-        distributed_loadsM = self.lib.Matrix_create(0, 0)
-        momentsM = self.lib.Matrix_create(0, 0)
-        
-        if point_loads:
-            point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0]))
-        if distributed_loads:
-            distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0]))
-        if moments:
-            momentsM = self.lib.Matrix_create(len(moments), len(moments[0]))
+        point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0])) if point_loads else self.lib.Matrix_create(0, 0)
+        distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0])) if distributed_loads else self.lib.Matrix_create(0, 0)
+        momentsM = self.lib.Matrix_create(len(moments), len(moments[0])) if moments else self.lib.Matrix_create(0, 0)
 
         for i, t in enumerate(point_loads):
             for j, load in enumerate(t):
@@ -93,16 +85,21 @@ class Calculations:
             for j, load in enumerate(t):
                 self.lib.Matrix_set(momentsM, i, j, load)                            
         
-        
         # Подготавливаем массивы для результатов
-        M1V = np.zeros(x.size, dtype=np.float64)
-        M1M = np.zeros(x.size, dtype=np.float64)
+        V = np.zeros(x.size, dtype=np.float64)
+        M = np.zeros(x.size, dtype=np.float64)
         
         # Вызываем функцию
-        self.lib.diagram_calc(L, x, x.size, M1V, M1M, point_loadsM, distributed_loadsM, momentsM)  
+        self.lib.diagram_calc(lenght, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)  
       
         self.lib.Matrix_destroy(point_loadsM)
         self.lib.Matrix_destroy(distributed_loadsM)
         self.lib.Matrix_destroy(momentsM)
 
-        return M1V, M1M
+        return V, M
+
+    def determinate_system(self):
+        pass
+    
+    def undeterminate_system(self):
+        pass

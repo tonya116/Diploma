@@ -162,8 +162,8 @@ class Window:
         self.current_model = self.tabs.get(app_data).model
 
     def build_diagram(self, model, V, M):
-        diag = Diagram(1001, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=V)
-        diag2 = Diagram(1002, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M)
+        diag = Diagram(1001, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], (255, 255, 0), diagram=V)
+        diag2 = Diagram(1002, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], (255, 0, 255), diagram=M)
         diagrams = []
         diagrams.append(diag)
         diagrams.append(diag2)
@@ -257,7 +257,6 @@ class Window:
         M1Mes = []
         for i, em in enumerate(eq_models):
             M1Ve, M1Me = self.calc.calc(em)
-            print(M1Ve, M1Me)
             M1Ves.append(M1Ve)
             M1Mes.append(M1Me)
 
@@ -313,14 +312,17 @@ class Window:
                     s += M1Mes[i][x] * M1Mb[x]
                 B[0][i] = s * dx        
             
-            print(B)
-            print(deltas)
-            b = Matrix(B)
+            b = Matrix(B) * -1
             delts = Matrix(deltas).inverse()
 
-            print(b * delts)
-                    
-
+            X = b * delts
+            print("X", X)
+            result_model = base_model.copy()
+            for i, em in enumerate(eq_models):
+                result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X.data[0][i])))
+            result_model.name = "result"
+            
+            self.build_diagram(result_model, *self.calc.calc(result_model))
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
