@@ -104,3 +104,25 @@ extern "C" void Matrix_set(Matrix* mat, int row, int col, double value) {
 extern "C" double Matrix_get(Matrix* mat, int row, int col) {
   return mat->get(row, col);
 }
+
+extern "C" double Mores_integral(double *A, double *B, size_t size, double dx) {
+
+  double s = 0;
+  for (int x = 0; x < size; x++) {
+    s += A[x] * B[x];
+  }
+  return s * dx;
+}
+
+extern "C" Matrix* lin_solve(Matrix* A, Matrix* B) {
+    
+  auto r = A->getInverse() * *B;
+
+  Matrix* res = new Matrix(r);
+  return res;
+}
+
+extern "C" Matrix* Matrix_create_from_data(double** data, size_t rows, size_t cols) {
+  Matrix* matrix = new Matrix(data, rows, cols);
+  return matrix;
+}
