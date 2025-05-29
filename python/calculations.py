@@ -9,6 +9,7 @@ from Entities.diagrams import Diagram
 from Entities.distributed_force import DistributedForce
 from Entities.force import Force
 from Entities.momentum import Momentum
+from Geometry.Matrix import Matrix
 
 
 class Calculations:
@@ -20,6 +21,10 @@ class Calculations:
         # Объявляем тип Matrix*
         class Matrix(ctypes.Structure):
             pass
+            # def __init__(self, data):
+            #     for i, t in enumerate(data):
+            #         for j, load in enumerate(t):
+            #             self.lib.Matrix_set(self, i, j, load)
 
         Matrix_p = ctypes.POINTER(Matrix)
         # Создаем матрицы параметров
@@ -42,12 +47,43 @@ class Calculations:
         self.lib.Matrix_create.argtypes = [ctypes.c_int, ctypes.c_int]
         self.lib.Matrix_create.restype = Matrix_p
 
+        self.lib.Matrix_create_from_data.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_double)), ctypes.c_size_t, ctypes.c_size_t]
+        self.lib.Matrix_create_from_data.restype = Matrix_p
+
         self.lib.Matrix_destroy.argtypes = [ctypes.c_void_p]
         self.lib.Matrix_destroy.restype = None
 
+        self.lib.Mores_integral.argtypes = [np.ctypeslib.ndpointer(dtype=ctypes.c_double), np.ctypeslib.ndpointer(dtype=ctypes.c_double), ctypes.c_size_t, ctypes.c_double]
+        self.lib.Mores_integral.restype = ctypes.c_double
+
+        self.lib.lin_solve.argtypes = [Matrix_p, Matrix_p]
+        self.lib.lin_solve.restype = Matrix_p
+        
         self.lib.Matrix_set.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int, ctypes.c_double]
+        self.lib.Matrix_set.restype = None
+
         self.lib.Matrix_get.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int]
         self.lib.Matrix_get.restype = ctypes.c_double
+
+
+    def create_matrix(self, py_data):
+        # Преобразуем Python list of lists в C-совместимый формат
+        rows = len(py_data)
+        cols = len(py_data[0]) if rows > 0 else 0
+        
+        # Создаем массив указателей
+        data = (ctypes.POINTER(ctypes.c_double) * rows)()
+        
+        for i in range(rows):
+            # Создаем массив doubles для каждой строки
+            data[i] = (ctypes.c_double * cols)()
+            for j in range(cols):
+                data[i][j] = py_data[i][j]
+        
+        # Создаем матрицу
+        matrix_ptr = self.lib.Matrix_create_from_data(data, rows, cols)
+        return matrix_ptr
+
 
     def calc(self, model):
         nodes = model.data.get("nodes")
@@ -90,8 +126,8 @@ class Calculations:
         M = np.zeros(x.size, dtype=np.float64)
         
         # Вызываем функцию
-        self.lib.diagram_calc(lenght, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)  
-      
+        self.lib.diagram_calc(lenght, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
+
         self.lib.Matrix_destroy(point_loadsM)
         self.lib.Matrix_destroy(distributed_loadsM)
         self.lib.Matrix_destroy(momentsM)
@@ -103,3 +139,31 @@ class Calculations:
     
     def undeterminate_system(self):
         pass
+    
+    def Mores_integral(self, size, M1Mes, M1Mb):
+
+        A = [[self.lib.Mores_integral(ep1, ep2, size, float(config("DX"))) for ep2 in M1Mes] for ep1 in M1Mes]
+        B = [self.lib.Mores_integral(ep1, M1Mb, size, float(config("DX"))) for ep1 in M1Mes]
+    
+        return np.array(A), np.array(B)
+        
+    def solve(self, A, B):
+        
+        B = [[*B]]
+        
+        print(A, B)
+        
+        a_cpp = self.create_matrix(A)
+        b_cpp = self.create_matrix(B)
+                
+        res = self.lib.lin_solve(a_cpp, b_cpp)
+        
+        X = []
+        for i, _ in enumerate(B[0]):
+            X.append(self.lib.Matrix_get(res, 0, i))
+                
+        self.lib.Matrix_destroy(a_cpp)
+        self.lib.Matrix_destroy(b_cpp)
+        self.lib.Matrix_destroy(res)
+        
+        return X
