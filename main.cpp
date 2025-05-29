@@ -30,5 +30,10 @@ int main() {
     printf("%f, %f\n", V[i], M[i]);
   }
 
+  Matrix* A = new Matrix{{4.9, 2.1}, {2.1, 9}};
+  Matrix* B = new Matrix{{-8.4, -3.6}};
+
+  auto C = lin_solve(A, B);
+  C->logMatrix();
   return 0;
 }
