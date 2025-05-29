@@ -60,29 +60,7 @@ class Matrix:
             return Matrix(result)
 
     def __matmul__(self, other):
-        """Умножение матриц через оператор @ (A @ B)."""
-        if not isinstance(other, Matrix):
-            raise TypeError("Ожидается объект класса Matrix")
-        
-        if self.cols != other.rows:
-            raise ValueError(
-                f"Количество столбцов первой матрицы ({self.cols}) "
-                f"должно быть равно количеству строк второй ({other.rows})"
-            )
-        
-        # Создаём результирующую матрицу, заполненную нулями
-        result = [
-            [0 for _ in range(other.cols)]
-            for _ in range(self.rows)
-        ]
-        
-        # Умножение матриц
-        for i in range(self.rows):
-            for j in range(other.cols):
-                for k in range(self.cols):
-                    result[i][j] += self.data[i][k] * other.data[k][j]
-        
-        return Matrix(result)
+        return self.__mul__(other)
 
     def transpose(self):
         """Транспонирование матрицы."""
