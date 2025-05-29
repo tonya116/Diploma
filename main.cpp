@@ -30,10 +30,49 @@ int main() {
     printf("%f, %f\n", V[i], M[i]);
   }
 
-  Matrix* A = new Matrix{{4.9, 2.1}, {2.1, 9}};
-  Matrix* B = new Matrix{{-8.4, -3.6}};
+  // 
 
-  auto C = lin_solve(A, B);
-  C->logMatrix();
+  Matrix A;
+  A.logMatrix();
+  Matrix B(3, 5);
+  B.logMatrix();
+  Matrix C{{4.9, 2.1}, {2.1, 9}};
+  C.logMatrix();
+
+  
+  double** data = new double*;
+  size_t n = 2, m = 2;
+  for (int i = 0; i < n; i++) {
+    data[i] = new double;
+    for (int j = 0; j < m; j++) {
+      data[i][j] = i + j * i + 5;
+    }
+  }
+  
+  Matrix D{data, n, m};
+  D.logMatrix();
+
+  // Matrix E(D);
+  // E.logMatrix();
+
+  // std::cout << E.dimEqual(B) << std::endl;
+
+  // D.transpose();
+  // D.logMatrix();
+
+  // std::cout << C.getDeterminant() << " " << std::endl;
+
+
+  // C.inverse();
+  // C.logMatrix();
+  Matrix Aa{{4.9, 2.1}, {2.1, 9}};
+  Matrix Ba{{-8.4}, { -3.6}};
+  
+  // (C + D).logMatrix();
+  (Aa.getInverse() * Ba).logMatrix();
+
+
+  // auto C = lin_solve(A, B);
+  // C->logMatrix();
   return 0;
 }
