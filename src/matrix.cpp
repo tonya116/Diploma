@@ -18,7 +18,7 @@ Matrix::Matrix(double **data, size_t rows, size_t cols) {
   for (int i = 0; i < rows; ++i) {
     _matrix.emplace_back(std::vector<double>(cols));
     for (int j = 0; j < cols; ++j) {
-      _matrix[i].emplace_back(data[i][j]); // Копируем каждую строку в вектор
+      _matrix[i][j] = data[i][j]; // Копируем каждую строку в вектор
     }
   }
 }
@@ -62,7 +62,7 @@ void Matrix::logMatrix() {
     // Функция для создания границы
     auto printBorder = [&]() {
         std::cout << "+";
-        for (size_t i = 0; i < _n; ++i) {
+        for (size_t i = 0; i < _m; ++i) {
             std::cout << std::string(cellWidth, '-') << "+";
         }
         std::cout << std::endl;
@@ -148,6 +148,18 @@ void Matrix::determinant(){
 
 void Matrix::inverse(){
 
+  if (_m != _n) {
+    std::runtime_error give_me_a_name("Cannot inverse matrix with wrong dimentions");
+    return;
+  }
+
+  determinant();
+
+  if (_det == 0) {
+    std::runtime_error give_me_a_name("Singular Matrix");
+    return;
+  }
+
   Matrix minors(_n, _m);
   for(int i = 0; i < _n; i++){
     for(int j = 0; j < _m; j++){
@@ -156,13 +168,13 @@ void Matrix::inverse(){
   }
 
   Matrix temp = minors.getTranspose() * (1/getDeterminant());
+
   for(int i = 0; i < _m; i++){
     for(int j = 0; j < _n; j++){
       _matrix[i][j] = temp[i][j];
     }
   }
 
-  _det = std::nan("1");
 }
 
 double Matrix::getDeterminant(){
@@ -269,7 +281,7 @@ Matrix Matrix::operator+(Matrix other) {
 std::vector<double> &Matrix::operator[](int index) { return _matrix[index]; }
 
 void Matrix::operator+=(Matrix other) {
-  *this = *this * other;
+  *this = *this + other;
 }
 
 void Matrix::set(int row, int col, double value) { _matrix[row][col] = value; }

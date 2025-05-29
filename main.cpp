@@ -30,10 +30,24 @@ int main() {
     printf("%f, %f\n", V[i], M[i]);
   }
 
-  Matrix* A = new Matrix{{4.9, 2.1}, {2.1, 9}};
-  Matrix* B = new Matrix{{-8.4, -3.6}};
 
-  auto C = lin_solve(A, B);
+  // Matrix E(D);
+  // E.logMatrix();
+
+  // std::cout << E.dimEqual(B) << std::endl;
+
+  // D.transpose();
+  // D.logMatrix();
+
+  // std::cout << C.getDeterminant() << " " << std::endl;
+
+
+  // C.inverse();
+  // C.logMatrix();
+  Matrix A{{14.7, 12.3}, {12.3, 14.7}};
+  Matrix B{{-731}, { -1025}};
+  
+  auto C = lin_solve(&A, &B);
   C->logMatrix();
   return 0;
 }
