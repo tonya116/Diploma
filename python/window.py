@@ -61,16 +61,11 @@ class Window:
             self.current_model.x = self.current_model.x + 30
 
     def mouse_drag_handler(self, sender, app_data, user_data):
-        pass   
-        # if self.current_model:
-        #     dx, dy = dpg.get_mouse_drag_delta()
-        #     # print(dpg.get_drawing_mouse_pos())
-        #     print(dx, dy)
-        #     f = Vector(dx, dy) 
-        #     current_pos = self.current_model.get_pos()
-        #     delta = current_pos + f/2
-        #     self.current_model.set_pos(Vector(delta.x, delta.y))
-        #     print(self.current_model.get_pos())
+        if self.current_model:
+            f = Vector(*dpg.get_mouse_pos()) 
+            # current_pos = self.current_model.get_pos()
+                        
+            self.current_model.set_pos(f/2)
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
         if self.current_model and app_data == dpg.mvMouseButton_Left:
@@ -250,8 +245,7 @@ class Window:
                 em.data.update({"supports": sups})
 
         M1Vb, M1Mb = self.calc.calc(base_model)
-        
-        self.build_diagram(base_model, M1Vb, M1Mb) 
+        self.build_diagram(base_model, M1Vb, M1Mb)
        
         M1Ves = []
         M1Mes = []
@@ -277,49 +271,25 @@ class Window:
                 s += M1Mes[0][x] * M1Mb[x]
             d1p = s * dx
             
-            res = - d1p / d11
-            print(f"X1: {res}, d1p: {d1p}, d11:{d11}")
-            s = 0
-            T = []
-            for x, _ in enumerate(M1Mes[0]):
-                T.append(M1Mes[0][x]*2.81 + M1Mb[x])
+            X = -d1p / d11
+            print(f"X1: {X}, d1p: {d1p}, d11:{d11}")
             
-            temporal = base_model.copy()
-
-            diag = Diagram(100+i, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=T)
-            diagrams = []
-            diagrams.append(diag)
-            temporal.diagrams = diagrams
-            temporal.name += f"Temp_diagram X{i+1}"  
-            self.create_tab(temporal)
+            result_model = base_model.copy()
+            for i, em in enumerate(eq_models):
+                result_model.data.get("loads").append(Force(-100, em.data.get("loads")[i].node, Vector(0, X)))
+            result_model.name = "result"
+            
+            self.build_diagram(result_model, *self.calc.calc(result_model))
 
         if len(M1Mes) >= 2:
 
-            deltas = [[0, 0], [0, 0]]
-            B = [[0, 0]]
-            
-            for i in range(dsi):
-                for j in range(dsi):
-                    s = 0
-                    for x, _ in enumerate(M1Mes[i]):
-                        s += M1Mes[i][x] * M1Mes[j][x]
-                    
-                    deltas[i][j] = s * dx
-                    
-            for i in range(dsi):
-                s = 0
-                for x, _ in enumerate(M1Mb):
-                    s += M1Mes[i][x] * M1Mb[x]
-                B[0][i] = s * dx        
-            
-            b = Matrix(B) * -1
-            delts = Matrix(deltas).inverse()
+            A, B = self.calc.Mores_integral(len(M1Mes), M1Mes, M1Mb)
+            X = self.calc.solve(A, B)
 
-            X = b * delts
             print("X", X)
             result_model = base_model.copy()
             for i, em in enumerate(eq_models):
-                result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X.data[0][i])))
+                result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
             result_model.name = "result"
             
             self.build_diagram(result_model, *self.calc.calc(result_model))
@@ -520,7 +490,7 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.10", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.11", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
