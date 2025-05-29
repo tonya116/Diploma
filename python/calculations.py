@@ -71,17 +71,13 @@ class Calculations:
         rows = len(py_data)
         cols = len(py_data[0]) if rows > 0 else 0
         
-        # Создаем массив указателей
-        data = (ctypes.POINTER(ctypes.c_double) * rows)()
-        
+        matrix_ptr = self.lib.Matrix_create(rows, cols)
+
         for i in range(rows):
-            # Создаем массив doubles для каждой строки
-            data[i] = (ctypes.c_double * cols)()
             for j in range(cols):
-                data[i][j] = py_data[i][j]
+                self.lib.Matrix_set(matrix_ptr, i, j, py_data[i][j])
         
         # Создаем матрицу
-        matrix_ptr = self.lib.Matrix_create_from_data(data, rows, cols)
         return matrix_ptr
 
 
@@ -105,22 +101,10 @@ class Calculations:
             if isinstance(load, Momentum):
                 moments.append([load.node.point.x, load.direction.y])
 
-        point_loadsM = self.lib.Matrix_create(len(point_loads), len(point_loads[0])) if point_loads else self.lib.Matrix_create(0, 0)
-        distributed_loadsM = self.lib.Matrix_create(len(distributed_loads), len(distributed_loads[0])) if distributed_loads else self.lib.Matrix_create(0, 0)
-        momentsM = self.lib.Matrix_create(len(moments), len(moments[0])) if moments else self.lib.Matrix_create(0, 0)
+        point_loadsM = self.create_matrix(point_loads)
+        distributed_loadsM = self.create_matrix(distributed_loads)
+        momentsM = self.create_matrix(moments)
 
-        for i, t in enumerate(point_loads):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(point_loadsM, i, j, load)
-
-        for i, t in enumerate(distributed_loads):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(distributed_loadsM, i, j, load)
-                
-        for i, t in enumerate(moments):
-            for j, load in enumerate(t):
-                self.lib.Matrix_set(momentsM, i, j, load)                            
-        
         # Подготавливаем массивы для результатов
         V = np.zeros(x.size, dtype=np.float64)
         M = np.zeros(x.size, dtype=np.float64)
@@ -143,24 +127,20 @@ class Calculations:
     def Mores_integral(self, size, M1Mes, M1Mb):
 
         A = [[self.lib.Mores_integral(ep1, ep2, size, float(config("DX"))) for ep2 in M1Mes] for ep1 in M1Mes]
-        B = [self.lib.Mores_integral(ep1, M1Mb, size, float(config("DX"))) for ep1 in M1Mes]
-    
+        B = [[self.lib.Mores_integral(ep1, M1Mb, size, float(config("DX")))] for ep1 in M1Mes]
+        
         return np.array(A), np.array(B)
         
     def solve(self, A, B):
-        
-        B = [[*B]]
-        
-        print(A, B)
-        
+                
         a_cpp = self.create_matrix(A)
         b_cpp = self.create_matrix(B)
-                
+
         res = self.lib.lin_solve(a_cpp, b_cpp)
         
         X = []
-        for i, _ in enumerate(B[0]):
-            X.append(self.lib.Matrix_get(res, 0, i))
+        for i, _ in enumerate(B):
+            X.append(self.lib.Matrix_get(res, i, 0))
                 
         self.lib.Matrix_destroy(a_cpp)
         self.lib.Matrix_destroy(b_cpp)

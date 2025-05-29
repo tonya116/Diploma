@@ -283,10 +283,11 @@ class Window:
 
         if len(M1Mes) >= 2:
 
-            A, B = self.calc.Mores_integral(len(M1Mes), M1Mes, M1Mb)
-            X = self.calc.solve(A, B)
-
+            A, B = self.calc.Mores_integral(len(M1Mes[0]), M1Mes, M1Mb)
+            X = self.calc.solve(A, B*-1)
+            
             print("X", X)
+            
             result_model = base_model.copy()
             for i, em in enumerate(eq_models):
                 result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
