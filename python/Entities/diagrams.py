@@ -24,13 +24,13 @@ class Diagram(Object):
         
         for i, val in enumerate(self.diagram):
             if i == 0:
-                self.primitives.append(Text(Point(i*dx, -val/factor).asList(), str(val), eval(config("TextColor")), 3))
+                self.primitives.append(Text(Point(i*dx, -val/factor).asList(), f"{val:.2}", eval(config("TextColor")), 3))
 
             if i == len(self.diagram) // 2:
-                self.primitives.append(Text(Point(i*dx, -val/factor).asList(), str(val), eval(config("TextColor")), 3))
+                self.primitives.append(Text(Point(i*dx, -val/factor).asList(), f"{val:.2}", eval(config("TextColor")), 3))
 
             if i == len(self.diagram) - 1:
-                self.primitives.append(Text(Point(i*dx, -val/factor).asList(), str(val), eval(config("TextColor")), 3))
+                self.primitives.append(Text(Point(i*dx, -val/factor).asList(), f"{val:.2}", eval(config("TextColor")), 3))
                 break
             self.primitives.append(
                 Line([i * dx, -val/factor], [(i + 1) * dx, -self.diagram[i + 1]/factor], self.color, 1)

@@ -166,87 +166,98 @@ class Window:
         model.name += "_diagram"
         self.create_tab(model)
 
+    def make_determinate(self):
+  
+        sups = self.current_model.data.get("supports")
+        unit_forces = []
+
+        fixed_n = 0
+        roller_n = 0
+        pinned_n = 0
+
+        for sup in sups:
+            if isinstance(sup, Fixed):
+                fixed_n += 1
+            elif isinstance(sup, Roller):
+                roller_n += 1
+            elif isinstance(sup, Pinned):
+                pinned_n += 1
+                    
+        if fixed_n == 0 and pinned_n == 0:
+            raise Exception("Конструкция является механизмом")
+
+        elif fixed_n != 0:
+            for sup in sups:
+                if isinstance(sup, Fixed):
+                    tmp = sup
+                    break
+            sups.clear()
+            sups.append(tmp)
+            return sups, unit_forces
+            
+        elif pinned_n == 1:
+            r = None
+            p = None
+            for sup in sups:
+                if isinstance(sup, Roller):
+                    r = sup
+                if isinstance(sup, Pinned):
+                    p = sup
+            a = 0
+            for sup in sups:
+                if sup != r and sup != p:
+                    unit_forces.append(Force(-10, sup.node, sup.direction))
+                    a += 1
+            
+            sups.clear()
+            sups.append(r)
+            sups.append(p)
+            return sups, unit_forces
+        
+        elif pinned_n > 1:
+            pinneds = []
+            for sup in sups:
+                if isinstance(sup, Pinned):
+                    pinneds.append(sup)
+                
+                if len(pinneds) == 2:
+                    break
+                
+            sups.clear()
+            sups.append(pinneds[0])
+            sups.append(Roller(node=pinneds[1].node, direction=pinneds[1].direction))
+            return sups, unit_forces
+        
     def calculate(self):
         
         if self.current_model.dsi < 0:
             raise Exception("DSI < 0; Something went wrong")
         elif self.current_model.dsi == 0:
             print("DSI = 0; Система статически определимая")
+
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
-            
-            dsi = self.current_model.dsi
-            
-            eq_models = [self.current_model.copy() for _ in range(dsi)]
-            
-            base_model = self.current_model.copy()
-            for em in eq_models:
-                em.data.get("loads").clear()
-            
-            sups = base_model.data.get("supports")
+        
+        dsi = self.current_model.dsi
+        
+        eq_models = [self.current_model.copy() for _ in range(dsi)]
+        for em in eq_models:
+            em.data.get("loads").clear()
 
-            fixed_n = 0
-            roller_n = 0
-            pinned_n = 0
-
-            for sup in sups:
-                if isinstance(sup, Fixed):
-                    fixed_n += 1
-                elif isinstance(sup, Roller):
-                    roller_n += 1
-                elif isinstance(sup, Pinned):
-                    pinned_n += 1
-                        
-            if fixed_n == 0 and pinned_n == 0:
-                raise Exception("Конструкция является механизмом")
-
-            if fixed_n != 0:
-                for sup in sups:
-                    if isinstance(sup, Fixed):
-                        tmp = sup
-                        break
-                sups.clear()
-                sups.append(tmp)
-                
-            if pinned_n == 1:
-                r = None
-                p = None
-                for sup in sups:
-                    if isinstance(sup, Roller):
-                        r = sup
-                    if isinstance(sup, Pinned):
-                        p = sup
-                a = 0
-                for sup in sups:
-                    if sup != r and sup != p:
-                        
-                        eq_models[a].data.get("loads").append(Force(-10, sup.node, sup.direction))
-                        a += 1
-                
-                sups.clear()
-                sups.append(r)
-                sups.append(p)
-            
-            if pinned_n > 1:
-                pinneds = []
-                for sup in sups:
-                    if isinstance(sup, Pinned):
-                        pinneds.append(sup)
-                    
-                    if len(pinneds) == 2:
-                        break
-                    
-                sups.clear()
-                sups.append(pinneds[0])
-                sups.append(Roller(node=pinneds[1].node, direction=pinneds[1].direction))
-
-            base_model.data.update({"supports": sups})
-            for em in eq_models:
-                em.data.update({"supports": sups})
+        sups, forces = self.make_determinate()
+        
+        for i, em in enumerate(eq_models):
+            em.data.get("loads").append(forces[i])
+        
+        base_model = self.current_model.copy()
+        base_model.data.update({"supports": sups})
+        
+        for em in eq_models:
+            em.data.update({"supports": sups})
 
         M1Vb, M1Mb = self.calc.calc(base_model)
         self.build_diagram(base_model, M1Vb, M1Mb)
-       
+    
         M1Ves = []
         M1Mes = []
         for i, em in enumerate(eq_models):
@@ -258,42 +269,20 @@ class Window:
             em.name += f"eq_diagram X{i+1}"  
             self.build_diagram(em, M1Ves[i], M1Mes[i]) 
 
-        dx = float(config("DX"))
+        A, B = self.calc.Mores_integral(len(M1Mes[0]) if M1Mes else 0, M1Mes, M1Mb)
+        X = self.calc.solve(A, B*-1)
+        
+        print("Матрица деформаций: \n", A)
+        print("Матрица деформаций от внешних нагрузок: \n", B)
 
-        if len(M1Mes) == 1:
-                
-            s = 0
-            for x, _ in enumerate(M1Mes[0]):
-                s += M1Mes[0][x] * M1Mes[0][x]
-            d11 = s * dx
-            s = 0
-            for x, _ in enumerate(M1Mb):
-                s += M1Mes[0][x] * M1Mb[x]
-            d1p = s * dx
-            
-            X = -d1p / d11
-            print(f"X1: {X}, d1p: {d1p}, d11:{d11}")
-            
-            result_model = base_model.copy()
-            for i, em in enumerate(eq_models):
-                result_model.data.get("loads").append(Force(-100, em.data.get("loads")[i].node, Vector(0, X)))
-            result_model.name = "result"
-            
-            self.build_diagram(result_model, *self.calc.calc(result_model))
-
-        if len(M1Mes) >= 2:
-
-            A, B = self.calc.Mores_integral(len(M1Mes[0]), M1Mes, M1Mb)
-            X = self.calc.solve(A, B*-1)
-            
-            print("X", X)
-            
-            result_model = base_model.copy()
-            for i, em in enumerate(eq_models):
-                result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
-            result_model.name = "result"
-            
-            self.build_diagram(result_model, *self.calc.calc(result_model))
+        print("Найденные реакции: \n", X)
+        
+        result_model = base_model.copy()
+        for i, em in enumerate(eq_models):
+            result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
+        result_model.name = "result"
+        
+        self.build_diagram(result_model, *self.calc.calc(result_model))
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
