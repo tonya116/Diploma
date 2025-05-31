@@ -4,7 +4,7 @@ from .prop import Support
 import numpy as np
 from .node import Node
 from Geometry.Vector import Vector
-from Geometry.Matrix import TranslationMatrix
+from Geometry.Matrix import RotationMatrix, TranslationMatrix
 from Geometry.Point import Point
 from Geometry.Primitives.Line import Line
 from config import config
@@ -25,7 +25,10 @@ class Fixed(Support):
         self.primitives.clear()
 
         mt = TranslationMatrix(self.node.point)
+        mr = RotationMatrix(self.direction.angle())
+
         for i in range(len(self.ctrlPoints)):
+            self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
 
         for i in range(0, len(self.ctrlPoints), 2):
