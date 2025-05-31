@@ -157,8 +157,8 @@ class Window:
         self.current_model = self.tabs.get(app_data).model
 
     def build_diagram(self, model, V, M):
-        diag = Diagram(1001, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], (255, 255, 0), diagram=V)
-        diag2 = Diagram(1002, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], (255, 0, 255), diagram=M)
+        diag = Diagram(1001, 0, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=V, model=model)
+        diag2 = Diagram(1002, 1, self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1], diagram=M, model=model)
         diagrams = []
         diagrams.append(diag)
         diagrams.append(diag2)
