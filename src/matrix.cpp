@@ -91,6 +91,8 @@ bool Matrix::dimEqual(Matrix other){
 
 void Matrix::transpose(){
   
+  if (_n == 1 && _m == 1) return;
+
   for(int i = 0; i < _n; i++){
     for(int j = 0; j < i; j++){
       std::swap(_matrix[i][j], _matrix[j][i]);
@@ -99,7 +101,12 @@ void Matrix::transpose(){
 }
 
 Matrix Matrix::minor(int r, int c) {
-  Matrix temp(_n - 1, _m - 1 );
+
+  if (_n - 1 == 0) {
+    return Matrix{{_matrix[0][0]}};
+  }
+
+  Matrix temp(_n-1, _m-1 );
   int a = 0;
   int b = 0;
   for (int i = 0; i < _m; i++) {
@@ -148,6 +155,11 @@ void Matrix::determinant(){
 
 void Matrix::inverse(){
 
+  if (_n == 1){
+     _matrix[0][0] = 1/_matrix[0][0];
+     return;
+  }
+
   if (_m != _n) {
     std::runtime_error give_me_a_name("Cannot inverse matrix with wrong dimentions");
     return;
@@ -167,14 +179,7 @@ void Matrix::inverse(){
     }
   }
 
-  Matrix temp = minors.getTranspose() * (1/getDeterminant());
-
-  for(int i = 0; i < _m; i++){
-    for(int j = 0; j < _n; j++){
-      _matrix[i][j] = temp[i][j];
-    }
-  }
-
+  *this = minors.getTranspose() * (1/_det);
 }
 
 double Matrix::getDeterminant(){
