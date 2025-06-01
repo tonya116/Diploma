@@ -1,6 +1,5 @@
 ﻿#include "../include/calculations.h"
 #include "matrix.h"
-#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <iostream>
@@ -15,20 +14,22 @@ double integral(double (*func)(double), double a, double b, double step) {
   return res;
 }
 
-extern "C" void reactions_calc(double &RA, double &RB, const double L, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments) {
+extern "C" void reactions_calc(double &RA, double xa, double &RB, double xb, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments) {
   double moment_sum = 0;
   double total_vertical = 0;
+  double L = xb - xa;
 
   for (auto &force : point_loads->_matrix) {
-    total_vertical -= force[1];
-    moment_sum -= force[1] * force[0];
+    total_vertical += force[1];
+    moment_sum += force[1] * (force[0] - xa);
     
   }
   for (auto &dl : distributed_loads->_matrix) {
+
     double w = dl[2] * (dl[1] - dl[0]);
-    double center = (dl[0] + dl[1]) / 2;
+    double x = (dl[0] + dl[1]) / 2;
     total_vertical += w;
-    moment_sum += w * center;
+    moment_sum += w * (x - xa);
     
   }
   for (auto &moment : moments->_matrix) {
@@ -39,23 +40,34 @@ extern "C" void reactions_calc(double &RA, double &RB, const double L, Matrix* p
   RA = total_vertical - RB;
 }
 
-extern "C" void diagram_calc(double L, double *x, size_t size, double *V,
+extern "C" void diagram_calc(double *x, double xa, double xb, size_t size, double *V,
                              double *M, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments) {
   double v, m;
   double RA = 0, RB = 0;
-  reactions_calc(RA, RB, L, point_loads, distributed_loads, moments);
+
+  reactions_calc(RA, xa, RB, xb, point_loads, distributed_loads, moments);
+
 
   std::cout << RA << " " << RB << std::endl;
 
   for (int i = 0; i < size; i++) {
-    v = RA;
-    m = RA * x[i];
+    v = 0;
+    m = 0;
+
+    if (x[i] >= xa) {
+      v += RA;
+      m += RA * (x[i] - xa);
+    }
+    if (x[i] >= xb) {
+      v += RB;
+      m += RB * (x[i] - xb);
+    }
     for (auto &force : point_loads->_matrix) {
       double l = force[0];
       double f = force[1];
       if (x[i] >= l) {
-        v += f;
-        m += f * (x[i] - l);
+        v -= f;
+        m -= f * (x[i] - l);
       }
     }
 
@@ -66,15 +78,16 @@ extern "C" void diagram_calc(double L, double *x, size_t size, double *V,
       double force = dl[2];
 
       if (x[i] >= start) {
-        if (x[i] <= end) {
-          v -= force * (x[i] - start);
-          m -= force * powf(x[i] - start, 2) / 2;
-        } else {
-          v += force * (end - start);
-          m += force * (end - start) * (x[i] - (start + end) / 2);
+
+        double x1 = start;
+        double x2 = std::min(x[i], end);
+        double l = x2 - x1;
+        v -= force * l;
+        m -= force * l * (x[i] - (x1 + x2) / 2);
+
         }
       }
-    }
+    
     for (auto &moment : moments->_matrix) {
       double l = moment[0];
       double mom = moment[1];
