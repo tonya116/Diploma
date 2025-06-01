@@ -91,6 +91,14 @@
                 0,
                 10
             ]
+        }  , {
+            "id": 3,
+            "node": 5,
+            "type": "force",
+            "direction": [
+                0,
+                -2.81
+            ]
         }
     ],
     "supports": [
@@ -103,12 +111,6 @@
         {
             "id": 2,
             "node": 3,
-            "type": "roller",
-            "direction": [0, 1]
-        },
-        {
-            "id": 3,
-            "node": 5,
             "type": "roller",
             "direction": [0, 1]
         }
