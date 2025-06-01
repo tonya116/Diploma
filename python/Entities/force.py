@@ -21,10 +21,10 @@ class Force(Load):
         self.primitives.clear()
 
         mt = TranslationMatrix(self.node.point)
-        # mr = RotationMatrix(-3.1415/5)
+        mr = RotationMatrix(self.direction.angle())
 
         for i in range(len(self.ctrlPoints)):
-            # self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
+            self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
                     
         self.primitives.append(Arrow(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))

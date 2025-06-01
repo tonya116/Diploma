@@ -37,7 +37,7 @@ class DistributedForce(Load):
         self.primitives.clear()
 
         mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix()
+        mr = RotationMatrix(self.direction.angle())
         for i in range(len(self.ctrlPoints)):
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
             self.ctrlPoints[i] = self.ctrlPoints[i] @ mt

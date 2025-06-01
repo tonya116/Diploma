@@ -33,7 +33,7 @@ class Node(Object):
 
         mt = TranslationMatrix(self.point)
         for i in range(len(self.ctrlPoints)):
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
+            self.ctrlPoints[i] @= mt
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("NodeColor")), 5))
 
         return self.primitives

@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 class Vector:
@@ -51,3 +52,13 @@ class Vector:
     
     def asList(self):
         return [self.x, self.y]
+    
+    def __complex__(self):
+        return complex(self.x, self.y)
+    
+    def angle(self):
+        t = self.__complex__()
+        return math.atan(t.imag/(t.real if t.real != 0 else 1e-14)) - 3.1415/2
+        
+    def ort(self):
+        return Vector(self.x / self.norm(), self.y / self.norm())
