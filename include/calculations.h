@@ -3,8 +3,8 @@
 #include "../include/matrix.h"
 
 extern "C" double integral(double (*func)(double), double a, double b, double step = 0.1);
-extern "C" void reactions_calc(double &RA, double &RB, const double L, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments);
-extern "C" void diagram_calc(double L, double* x, size_t size, double* V, double* M,Matrix* point_loads, Matrix* distributed_loads, Matrix* moments);
+extern "C" void reactions_calc(double &RA, double xa, double &RB, double xb, Matrix* point_loads, Matrix* distributed_loads, Matrix* moments);
+extern "C" void diagram_calc(double* x, double xa, double xb, size_t size, double* V, double* M,Matrix* point_loads, Matrix* distributed_loads, Matrix* moments);
 
 
 // Создает матрицу из плоского массива
