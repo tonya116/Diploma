@@ -271,19 +271,19 @@ class Window:
 
         area = [self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1]]
 
-        M1Vb, M1Mb = self.calc.calc(base_model)
+        M1Vb, M1Mb = self.calc.calc(base_model, sups[0], sups[1])
         self.build_diagram(base_model, area[0], area[1], M1Vb, M1Mb)
         
         tmp = base_model.copy()
         tmp.data.update({"supports": sups})
 
-        self.build_diagram(tmp, area[0], area[1], *self.calc.calc(tmp))
+        self.build_diagram(tmp, area[0], area[1], *self.calc.calc(tmp, sups[0], sups[1]))
         
     
         M1Ves = []
         M1Mes = []
         for i, em in enumerate(eq_models):
-            M1Ve, M1Me = self.calc.calc(em)
+            M1Ve, M1Me = self.calc.calc(em, sups[0], sups[1])
             M1Ves.append(M1Ve)
             M1Mes.append(M1Me)
 
@@ -304,7 +304,7 @@ class Window:
             result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
         result_model.name = "result"
         
-        self.build_diagram(result_model, area[0], area[1], *self.calc.calc(result_model))
+        self.build_diagram(result_model, area[0], area[1], *self.calc.calc(result_model, sups[0], sups[1]))
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
