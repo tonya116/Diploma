@@ -28,12 +28,12 @@ class Roller(Support):
     def geometry(self):
         self.primitives.clear()
         
+        mr = RotationMatrix(self.direction.angle())
         mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix()
         for i in range(len(self.ctrlPoints)):
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
-            
+            self.ctrlPoints[i] @= mr
+            self.ctrlPoints[i] @= mt
+        
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("SupportColor")), 5))
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 3, (255, 255, 255), 5))
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("SupportColor")), 5))

@@ -31,8 +31,9 @@ class Calculations:
 
         # Определяем типы аргументов и возвращаемого значения
         self.lib.diagram_calc.argtypes = [
-            ctypes.c_double,  # L
             np.ctypeslib.ndpointer(dtype=np.float64),  # x
+            ctypes.c_double, # xA
+            ctypes.c_double, # xB
             ctypes.c_size_t,  # size
             np.ctypeslib.ndpointer(dtype=np.float64),  # V
             np.ctypeslib.ndpointer(dtype=np.float64),  # M
@@ -80,8 +81,7 @@ class Calculations:
         # Создаем матрицу
         return matrix_ptr
 
-
-    def calc(self, model):
+    def calc(self, model, sup1, sup2):
         nodes = model.data.get("nodes")
         
         start_node = nodes[0]
@@ -110,7 +110,7 @@ class Calculations:
         M = np.zeros(x.size, dtype=np.float64)
         
         # Вызываем функцию
-        self.lib.diagram_calc(lenght, x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
+        self.lib.diagram_calc(x, sup1.node.point.x, sup2.node.point.x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
 
         self.lib.Matrix_destroy(point_loadsM)
         self.lib.Matrix_destroy(distributed_loadsM)
