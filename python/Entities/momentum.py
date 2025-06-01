@@ -15,10 +15,10 @@ class Momentum(Load):
     def __init__(self, id:int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
 
-        self.ctrlPoints.append(Point(0, -1 * direction.ort().y ))
-        self.ctrlPoints.append(Point(0, 1 *  direction.ort().y ))
-        self.ctrlPoints.append(Point(1, -1 * direction.ort().y ))
-        self.ctrlPoints.append(Point(-1, 1 * direction.ort().y ))
+        self.ctrlPoints.append(Point(0, 1 * direction.ort().y ))
+        self.ctrlPoints.append(Point(0, -1 *  direction.ort().y ))
+        self.ctrlPoints.append(Point(1, 1 * direction.ort().y ))
+        self.ctrlPoints.append(Point(-1, -1 * direction.ort().y ))
 
     def __str__(self):
         return f"Momentum: {self.node}, Direction: {self.direction}, Momentum: {self.force}"
