@@ -26,6 +26,8 @@ from Entities.diagrams import Diagram
 from calculations import Calculations
 from Geometry.Matrix import Matrix
 from tab import Tab
+from data.data import load_channels_from_csv
+
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
@@ -37,6 +39,9 @@ def mult(a1, a2, index):
 
 E = 2e11  # модуль упругости (Па)
 I = 0.00_000_255  # момент инерции (м^4)
+
+sigma = 180e6
+
 class Window:
     def __init__(self):
         
@@ -306,14 +311,24 @@ class Window:
         
         self.build_diagram(0, result_model, area[0], area[1], res_A)
         self.build_diagram(1, result_model, area[0], area[1], res_B)
+        
         self.create_tab(result_model)
+        minW = abs(res_B).max()/sigma
+        print(minW)
+        
+        i_beams = load_channels_from_csv("python/data/IBeam.csv")
+        I = 0
+        for k, v in i_beams.items():
+            if  v.Wx  > minW:
+                print("Подходит двутавр: ", k)
+                I = v.Ix
+                break
 
         tmp = result_model.copy()
         tmp.name = "tmp"
 
         # Нормализуем
-        M = res_B
-        print(type(res_B))
+        M = res_B / (E * I)
         # # Интегрируем
         theta = self.calc.integrate(M)
         v = self.calc.integrate(theta)
@@ -327,6 +342,9 @@ class Window:
 
         self.build_diagram(2, tmp, area[0], area[1], v)
         self.create_tab(tmp)
+        
+
+
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
