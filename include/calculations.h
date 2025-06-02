@@ -21,3 +21,5 @@ extern "C" double Matrix_get(Matrix* mat, int row, int col);
 extern "C" double Mores_integral(double *A, double *B, size_t size, double dx);
 
 extern "C" Matrix* lin_solve(Matrix* A, Matrix* B);
+
+extern "C" void integrate(const double* y, double dx, double* result, size_t size, int initial_zero);
