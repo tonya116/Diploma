@@ -186,4 +186,9 @@ class RotationMatrix(Matrix):
     def rotation_angle(self):
         """Возвращает угол поворота в радианах"""
         return atan2(self.data[1][0], self.data[0][0])
-    
+
+
+class ScaleMatrix(Matrix):
+    def __init__(self, scale: float = 1):
+        self.data = [[scale, 0, 0], [0, scale, 0], [0, 0, 1]]
+        super().__init__(self.data)

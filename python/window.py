@@ -26,6 +26,8 @@ from Entities.diagrams import Diagram
 from calculations import Calculations
 from Geometry.Matrix import Matrix
 from tab import Tab
+from data.data import load_channels_from_csv
+
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
@@ -37,6 +39,9 @@ def mult(a1, a2, index):
 
 E = 2e11  # модуль упругости (Па)
 I = 0.00_000_255  # момент инерции (м^4)
+
+sigma = 180e6
+
 class Window:
     def __init__(self):
         
@@ -157,9 +162,7 @@ class Window:
         self.current_model = self.tabs.get(app_data).model
 
     def build_diagram(self, type, model, start_node, end_node, diagram):
-        diag = Diagram(1001, type, start_node, end_node, diagram, model=model)
-        model.diagrams.append(diag)
-        model.name += "_diagram"
+        model.diagrams.append(Diagram(1001, type, start_node, end_node, diagram, model=model))
 
     def apply_force(self, sup):
         
@@ -271,8 +274,9 @@ class Window:
         M1Vb, M1Mb = self.calc.calc(base_model, sups[0], sups[1])
         self.build_diagram(0, base_model, area[0], area[1], M1Vb)
         self.build_diagram(1, base_model, area[0], area[1], M1Mb)
-        self.create_tab(base_model)
+        base_model.name += "_diagram"
 
+        self.create_tab(base_model)
     
         M1Ves = []
         M1Mes = []
@@ -282,9 +286,11 @@ class Window:
             M1Mes.append(M1Me)
 
         for i, em in enumerate(eq_models):
-            em.name += f"eq_diagram X{i+1}"  
+            em.name = f"X{i+1}"  
             self.build_diagram(0, em, area[0], area[1], M1Ves[i]) 
             self.build_diagram(1, em, area[0], area[1], M1Mes[i]) 
+            em.name += "_diagram"
+
             self.create_tab(em)
 
 
@@ -301,19 +307,33 @@ class Window:
             result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
             
         result_model.name = "result"
+        result_model.name += "_diagram"
+
         
         res_A, res_B = self.calc.calc(result_model, sups[0], sups[1])
         
         self.build_diagram(0, result_model, area[0], area[1], res_A)
         self.build_diagram(1, result_model, area[0], area[1], res_B)
-        self.create_tab(result_model)
 
-        tmp = result_model.copy()
-        tmp.name = "tmp"
+        self.create_tab(result_model)
+        minW = abs(res_B).max()/sigma
+        
+        i_beams = load_channels_from_csv("python/data/IBeam.csv")
+        I = 0
+        for k, v in i_beams.items():
+            if  v.Wx  > minW:
+                print("Подходит двутавр: ", k)
+                I = v.Ix
+                break
+        if I == 0:
+            I = 0.000000000000000001
+
+        bending_model = result_model.copy()
+        bending_model.name = "bending"
+        bending_model.name += "_diagram"
 
         # Нормализуем
-        M = res_B
-        print(type(res_B))
+        M = res_B / (E * I)
         # # Интегрируем
         theta = self.calc.integrate(M)
         v = self.calc.integrate(theta)
@@ -322,11 +342,11 @@ class Window:
         v -= v[0]                      # обнуляем левый конец
         v -= np.linspace(0, v[-1], len(v))  # убираем наклон (вторую постоянную)
 
-        tmp.data.get("loads").clear()
-        tmp.data.get("supports").clear()
+        bending_model.data.get("loads").clear()
+        bending_model.data.get("supports").clear()
 
-        self.build_diagram(2, tmp, area[0], area[1], v)
-        self.create_tab(tmp)
+        self.build_diagram(2, bending_model, area[0], area[1], v)
+        self.create_tab(bending_model)
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)

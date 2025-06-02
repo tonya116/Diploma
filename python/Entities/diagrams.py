@@ -15,26 +15,40 @@ class Diagram(Object):
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
-        self.diagram = diagram
+        self.diagram = list(diagram)
         self.model = model
+        self.factor = 10
+        
+        match(self.type):
+            case 0:
+                self.color = eval(config("QDiagramColor"))
+            case 1:
+                self.color = eval(config("MDiagramColor"))
+            case _:
+                self.color = eval(config("BDiagramColor"))
+        
+        if self.type == 2:
+            self.factor = 1e-14
+        self.interest_points.append(Point(self.diagram.index(max(self.diagram)) * float(config("DX")), -max(self.diagram)/self.factor))
+        self.interest_points.append(Point(self.diagram.index(min(self.diagram)) * float(config("DX")), -min(self.diagram)/self.factor))
+        self.interest_points.append(Point(0, self.diagram[0]/self.factor))
+        self.interest_points.append(Point((len(diagram)-1) * float(config("DX")), self.diagram[-1]/self.factor))
+
 
     def geometry(self):
         self.primitives.clear()
         dx = float(config("DX"))
         
-        factor = 10
-        
-        color = eval(config("QDiagramColor") if self.type else config("MDiagramColor"))
-        
-        for node in self.model.data.get("nodes"):
-            val = self.diagram[int(node.point.x / dx)]
-            self.primitives.append(Text(Point(node.point.x, -val/factor).asList(), f"{val:.3}", eval(config("TextColor")), 3))
+
+        for point in self.interest_points:
+            
+            self.primitives.append(Text(point.asList(), f"{-point.y:.3}", eval(config("TextColor")), 3))
         
         for i, val in enumerate(self.diagram):
             if i == len(self.diagram)-1:
                 break
             self.primitives.append(
-                Line([i * dx, -val/factor], [(i + 1) * dx, -self.diagram[i+1]/factor], color, 2)
+                Line([i * dx, -val/self.factor], [(i + 1) * dx, -self.diagram[i+1]/self.factor], self.color, 2)
             )
         N = 50        
         
@@ -42,7 +56,7 @@ class Diagram(Object):
             for i in range(0, len(self.diagram), N):
                 if i % N == 0:
                     self.primitives.append(
-                        Line([i * dx, -self.diagram[i]/factor], [i * dx, 0], color, 1)
+                        Line([i * dx, -self.diagram[i]/self.factor], [i * dx, 0], self.color, 1)
                     )
             
         return self.primitives

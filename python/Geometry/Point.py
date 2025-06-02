@@ -49,5 +49,11 @@ class Point:
     def __repr__(self):
         return self.__str__()
     
+    def __mul__(self, scalar):
+        tmp = Point(self.x, self.y)
+        tmp.x *= scalar
+        tmp.y *= scalar
+        return tmp
+    
     def asList(self):
         return [self.x, self.y]
