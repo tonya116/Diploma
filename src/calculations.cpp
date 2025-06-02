@@ -139,3 +139,15 @@ extern "C" Matrix* Matrix_create_from_data(double** data, size_t rows, size_t co
   Matrix* matrix = new Matrix(data, rows, cols);
   return matrix;
 }
+
+extern "C" void integrate(const double* y, double dx, double* result, size_t size, int initial_zero) {
+    if (size < 2) return;
+
+    if (initial_zero)
+        result[0] = 0.0;
+
+    for (size_t i = 1; i < size; ++i) {
+        double trap = 0.5 * (y[i] + y[i - 1]) * dx;
+        result[i] = result[i - 1] + trap;
+    }
+}
