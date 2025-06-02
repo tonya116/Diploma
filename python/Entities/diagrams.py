@@ -26,6 +26,9 @@ class Diagram(Object):
         
         color = eval(config("QDiagramColor") if self.type else config("MDiagramColor"))
         
+        if self.type == 2:
+            factor = 1e-14
+        
         for node in self.model.data.get("nodes"):
             val = self.diagram[int(node.point.x / dx)]
             self.primitives.append(Text(Point(node.point.x, -val/factor).asList(), f"{val:.3}", eval(config("TextColor")), 3))
