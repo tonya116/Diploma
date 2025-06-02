@@ -17,21 +17,21 @@
         {
             "id": 3,
             "coordinates": [
-                1.5,
+                2,
                 0
             ]
         },
         {
             "id": 4,
             "coordinates": [
-                2,
+                3,
                 0
             ]
         },
         {
             "id": 5,
             "coordinates": [
-                3,
+                4,
                 0
             ]
         }
@@ -77,28 +77,20 @@
             "id": 1,
             "node": 2,
             "type": "force",
-            "direction": [
-                0,
-                10
-            ]
-        },
-        {
-            "id": 2,
-            "node": 3,
-            "type": "distributed_force",
-            "lenght": 1,
+            "lenght": 2,
             "direction": [
                 0,
                 10
             ]
         },  
         {
-            "id": 2,
+            "id": 1,
             "node": 4,
-            "type": "momentum",
-            "momentum": [
+            "type": "distributed_force",
+            "lenght": 2,
+            "direction": [
                 0,
-                -10
+                10
             ]
         }
         
@@ -112,13 +104,13 @@
         },
         {
             "id": 2,
-            "node": 5,
+            "node": 3,
             "type": "roller",
             "direction": [0, 1]
         },
         {
             "id": 3,
-            "node": 4,
+            "node": 5,
             "type": "roller",
             "direction": [0, 1]
         }
