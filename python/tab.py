@@ -8,6 +8,7 @@ from config import config
 from dearpygui import dearpygui as dpg
 from model import Model
 from Geometry.Vector import Vector
+from Geometry.Point import Point
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
@@ -57,11 +58,12 @@ def draw(primitive, node_id):
         )
 
 class Tab:
+    far = 1000
+
     def __init__(self, model: Model):
 
         self.model = model
-
-        self.model = model
+        self.grid = []
         self.drawlist_id = None
         self.draw_layer_id = None
         self.model.set_pos(Vector(W//8, H//4))
@@ -81,17 +83,47 @@ class Tab:
             return
 
         self.model.update()
-
+        
         for _, val in self.model.data.items():
             for obj in val:
-                for prim in obj.geometry():
-                    draw(prim, self.model.draw_node_id)
+                self.draw_grid(obj.apply_transformation(obj.interest_points))
                     
+        for obj in self.model.diagrams:
+            
+            self.draw_grid(obj.apply_transformation(obj.interest_points))
+
+        for obj in self.model.data.get("supports"):
+            for prim in obj.geometry():
+                draw(prim, self.model.draw_node_id)
+   
+        for obj in self.model.data.get("elements"):
+            for prim in obj.geometry():
+                draw(prim, self.model.draw_node_id)
+
+        for obj in self.model.data.get("nodes"):
+            for prim in obj.geometry():
+                draw(prim, self.model.draw_node_id)
+
+        for obj in self.model.data.get("loads"):
+            for prim in obj.geometry():
+                draw(prim, self.model.draw_node_id)
+
+        
         for obj in self.model.diagrams:
             for prim in obj.geometry():
                 draw(prim, self.model.draw_node_id)
+
                     
     def clear_model(self):
         """Удаляет все графические элементы модели"""
         if dpg.does_item_exist(self.model.draw_node_id):
             dpg.delete_item(self.model.draw_node_id, children_only=True)
+
+    def draw_grid(self, interest_points: list[Point]):
+        
+        for point in interest_points:
+            self.grid.append(Line(Point(point.x, self.far).asList(), Point(point.x, -self.far).asList(), (64, 64, 64), 1))
+            self.grid.append(Line(Point(self.far, point.y).asList(), Point(-self.far, point.y).asList(), (64, 64, 64), 1))
+
+        for prim in set(self.grid):
+            draw(prim, self.model.draw_node_id)
