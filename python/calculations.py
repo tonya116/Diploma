@@ -11,6 +11,8 @@ from Entities.force import Force
 from Entities.momentum import Momentum
 from Geometry.Matrix import Matrix
 
+from ctypes import POINTER, c_int, c_double, c_size_t, c_void_p
+
 
 class Calculations:
     def __init__(self):
@@ -21,20 +23,16 @@ class Calculations:
         # Объявляем тип Matrix*
         class Matrix(ctypes.Structure):
             pass
-            # def __init__(self, data):
-            #     for i, t in enumerate(data):
-            #         for j, load in enumerate(t):
-            #             self.lib.Matrix_set(self, i, j, load)
+
 
         Matrix_p = ctypes.POINTER(Matrix)
-        # Создаем матрицы параметров
 
         # Определяем типы аргументов и возвращаемого значения
         self.lib.diagram_calc.argtypes = [
             np.ctypeslib.ndpointer(dtype=np.float64),  # x
-            ctypes.c_double, # xA
-            ctypes.c_double, # xB
-            ctypes.c_size_t,  # size
+            c_double, # xA
+            c_double, # xB
+            c_size_t,  # size
             np.ctypeslib.ndpointer(dtype=np.float64),  # V
             np.ctypeslib.ndpointer(dtype=np.float64),  # M
             Matrix_p,  # pl
@@ -45,27 +43,36 @@ class Calculations:
         self.lib.diagram_calc.restype = None
     
         # Определим возвращаемые и аргументные типы
-        self.lib.Matrix_create.argtypes = [ctypes.c_int, ctypes.c_int]
+        self.lib.Matrix_create.argtypes = [c_int, c_int]
         self.lib.Matrix_create.restype = Matrix_p
 
-        self.lib.Matrix_create_from_data.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_double)), ctypes.c_size_t, ctypes.c_size_t]
+        self.lib.Matrix_create_from_data.argtypes = [POINTER(POINTER(c_double)), c_size_t, c_size_t]
         self.lib.Matrix_create_from_data.restype = Matrix_p
 
-        self.lib.Matrix_destroy.argtypes = [ctypes.c_void_p]
+        self.lib.Matrix_destroy.argtypes = [c_void_p]
         self.lib.Matrix_destroy.restype = None
 
-        self.lib.Mores_integral.argtypes = [np.ctypeslib.ndpointer(dtype=ctypes.c_double), np.ctypeslib.ndpointer(dtype=ctypes.c_double), ctypes.c_size_t, ctypes.c_double]
-        self.lib.Mores_integral.restype = ctypes.c_double
+        self.lib.Mores_integral.argtypes = [np.ctypeslib.ndpointer(dtype=c_double), np.ctypeslib.ndpointer(dtype=c_double), c_size_t, c_double]
+        self.lib.Mores_integral.restype = c_double
 
         self.lib.lin_solve.argtypes = [Matrix_p, Matrix_p]
         self.lib.lin_solve.restype = Matrix_p
         
-        self.lib.Matrix_set.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int, ctypes.c_double]
+        self.lib.Matrix_set.argtypes = [Matrix_p, c_int, c_int, c_double]
         self.lib.Matrix_set.restype = None
 
-        self.lib.Matrix_get.argtypes = [Matrix_p, ctypes.c_int, ctypes.c_int]
-        self.lib.Matrix_get.restype = ctypes.c_double
+        self.lib.Matrix_get.argtypes = [Matrix_p, c_int, c_int]
+        self.lib.Matrix_get.restype = c_double
 
+        self.lib.integrate.argtypes = [
+            np.ctypeslib.ndpointer(dtype=np.float64, flags="C_CONTIGUOUS"),
+            c_double,
+            np.ctypeslib.ndpointer(dtype=np.float64, flags="C_CONTIGUOUS"),
+            c_size_t,
+            c_int,
+        ]
+
+        self.lib.integrate.restype = None
 
     def create_matrix(self, py_data):
         # Преобразуем Python list of lists в C-совместимый формат
@@ -147,3 +154,11 @@ class Calculations:
         self.lib.Matrix_destroy(res)
         
         return X
+    
+    def integrate(self, y:np.array):
+
+        result = np.zeros(y.size, dtype=np.float64)
+        y = np.array(y)
+        self.lib.integrate(y, float(config("DX")), result, len(y), 1)
+        
+        return result
