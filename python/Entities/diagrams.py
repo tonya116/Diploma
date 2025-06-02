@@ -28,20 +28,21 @@ class Diagram(Object):
         
         for node in self.model.data.get("nodes"):
             val = self.diagram[int(node.point.x / dx)]
-
             self.primitives.append(Text(Point(node.point.x, -val/factor).asList(), f"{val:.3}", eval(config("TextColor")), 3))
         
         for i, val in enumerate(self.diagram):
             if i == len(self.diagram)-1:
                 break
             self.primitives.append(
-                Line([i * dx, -val/factor], [(i + 1) * dx, -self.diagram[i+1]/factor], color, 1)
+                Line([i * dx, -val/factor], [(i + 1) * dx, -self.diagram[i+1]/factor], color, 2)
             )
         N = 50        
-        for i in range(0, len(self.diagram), N):
-            if i % N == 0:
-                self.primitives.append(
-                    Line([i * dx, -self.diagram[i]/factor], [i * dx, 0], color, 3)
-                )
         
+        if self.type != 2:
+            for i in range(0, len(self.diagram), N):
+                if i % N == 0:
+                    self.primitives.append(
+                        Line([i * dx, -self.diagram[i]/factor], [i * dx, 0], color, 1)
+                    )
+            
         return self.primitives
