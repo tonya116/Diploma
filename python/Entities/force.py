@@ -12,7 +12,7 @@ class Force(Load):
         super().__init__(id, node, direction)
  
         self.ctrlPoints.append(Point())
-        self.ctrlPoints.append(Point(direction.x, -direction.y))
+        self.ctrlPoints.append(Point(direction.ort().x, -direction.ort().y))
 
     def __str__(self):
         return f"Force: {self.node}, Direction: {self.direction}, Force: {self.force}"

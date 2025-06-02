@@ -4,7 +4,7 @@ from Geometry.Point import Point
 from Geometry.Primitives.Arrow import Arrow
 from Geometry.Primitives.Line import Line
 from config import config
-from Geometry.Matrix import RotationMatrix, TranslationMatrix
+from Geometry.Matrix import RotationMatrix, ScaleMatrix, TranslationMatrix
 from .node import Node
 
 from .load import Load
@@ -13,9 +13,13 @@ class DistributedForce(Load):
         super().__init__(id, node, direction)
 
         self.lenght = lenght
+        
+        self.transformation = TranslationMatrix(self.node.point)
+        self.rotation = RotationMatrix(self.direction.angle())
+        self.scale = ScaleMatrix(0.5)
 
-        self.ctrlPoints.append(Point(-self.lenght/2, -2))
-        self.ctrlPoints.append(Point(self.lenght/2, -2))
+        self.ctrlPoints.append(Point(-self.lenght, -2))
+        self.ctrlPoints.append(Point(self.lenght, -2))
         
         n = 4
         step = self.lenght/n
@@ -36,12 +40,8 @@ class DistributedForce(Load):
     def geometry(self):
         self.primitives.clear()
 
-        mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix(self.direction.angle())
-        for i in range(len(self.ctrlPoints)):
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
-            
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
+
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))
 
         for i in range(2, len(self.ctrlPoints), 2):
