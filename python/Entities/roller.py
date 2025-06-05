@@ -14,6 +14,9 @@ class Roller(Support):
     def __init__(self, id:int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
         self.dof = 1
+        self.rotation = RotationMatrix(self.direction.angle())
+        self.transformation = TranslationMatrix(self.node.point)
+        self.scale = ScaleMatrix(0.5)
         
         self.ctrlPoints.append(Point())
         self.ctrlPoints.append(Point(0, 1))
@@ -28,11 +31,7 @@ class Roller(Support):
     def geometry(self):
         self.primitives.clear()
         
-        mr = RotationMatrix(self.direction.angle())
-        mt = TranslationMatrix(self.node.point)
-        for i in range(len(self.ctrlPoints)):
-            self.ctrlPoints[i] @= mr
-            self.ctrlPoints[i] @= mt
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
         
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("SupportColor")), 5))
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 3, (255, 255, 255), 5))
@@ -42,3 +41,6 @@ class Roller(Support):
             self.primitives.append(Line(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("SupportColor")), 5))
         
         return self.primitives
+    
+    def __deepcopy__(self, _):
+        return Roller(self.id, self.node, self.direction)

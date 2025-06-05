@@ -30,3 +30,6 @@ class Force(Load):
         self.primitives.append(Arrow(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))
 
         return self.primitives
+    
+    def __deepcopy__(self, _):
+        return Force(self.id, self.node, self.direction)

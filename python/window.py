@@ -26,7 +26,7 @@ from Entities.diagrams import Diagram
 from calculations import Calculations
 from Geometry.Matrix import Matrix
 from tab import Tab
-from data.data import load_channels_from_csv
+from data.data import Sortament
 
 
 W = int(config("WIDTH"))
@@ -50,7 +50,10 @@ class Window:
         self.models: dict = {}
         self.tabs: dict = {}
         self.isDragging:bool = False
-        
+        self.sortament = Sortament()
+
+        self.factor = 30
+
         # Настройка интерфейса
         dpg.create_context()
         dpg.create_viewport(title="C++ & Python Calculation", width=W, height=H)
@@ -61,94 +64,28 @@ class Window:
             return
 
         if app_data == dpg.mvKey_Q:
-            self.current_model.x = self.current_model.x - 30
+            self.current_model.move(Vector(30, 0))
         if app_data == dpg.mvKey_E:
-            self.current_model.x = self.current_model.x + 30
+            self.current_model.move(Vector(-30, 0))
 
     def mouse_drag_handler(self, sender, app_data, user_data):
         if self.current_model:
             f = Vector(*dpg.get_mouse_pos()) 
-            # current_pos = self.current_model.get_pos()
-                        
-            self.current_model.set_pos(f/2)
+            current_pos = self.current_model.get_pos()
+            # self.current_model.set_pos(f + (f - current_pos))
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
         if self.current_model and app_data == dpg.mvMouseButton_Left:
-            mouse_pos = dpg.get_drawing_mouse_pos()
-            # mouse_pos[0] -= self.current_model.get_pos()[0]
-            # mouse_pos[1] -= self.current_model.get_pos()[1]
-
-            # Рисуем круг в месте клика для визуальной обратной связи
-            with dpg.draw_layer(parent=self.drawlist_id, tag=self.draw_layer_id):
-                with dpg.draw_node(parent=self.draw_layer_id):
-                    dpg.draw_circle(mouse_pos, 5, color=(255, 255, 0), fill=(255, 255, 0))
-            # print(type(self.current_model.get_model_matrix()))
-
-            # Получаем матрицу преобразования (модель * проекция)
-            # model_matrix = self.current_model.get_model_matrix()
-            
-            # print(model_matrix)
-            model_matrix = (
-            # dpg.create_lookat_matrix([1, 0, 0], [1, 0, 0.1], [0, 1, 0])
-            dpg.create_translation_matrix([self.current_model.x+100000, self.current_model.y])
-            * dpg.create_rotation_matrix(math.radians(self.current_model.x_rot), [1, 0, 0])
-            * dpg.create_rotation_matrix(math.radians(self.current_model.y_rot), [0, 1, 0])
-            * dpg.create_rotation_matrix(math.radians(self.current_model.z_rot), [0, 0, 1])
-            * dpg.create_scale_matrix([self.current_model.scale, self.current_model.scale, self.current_model.scale]) 
-        
-        )
-            transform = model_matrix#  * dpg.create_rotation_matrix(3.1415/2, [0, 1, 0])
+            mouse_pos = Vector(*dpg.get_drawing_mouse_pos()) - Vector(W//4, H//2)
             print(f"Mouse position: {mouse_pos}")
-            
-            closest_node = None
-            min_distance = float('inf')
-            threshold = 10  # Пороговое расстояние для попадания
-            
-            for i, node in enumerate(self.current_model.nodes):
-                
-                # Преобразуем точку модели в однородные координаты
-                point = dpg.mvVec4(*node.point, 1.0)
-                
-                # Применяем преобразование (ортогональное, без перспективы)
-                transformed = point * transform
-                screen_x = transformed[0]
-                screen_y = transformed[1]
-                
-                # Рисуем круг для визуальной обратной связи
-                with dpg.draw_layer(parent=self.drawlist_id, tag=self.draw_layer_id):
-                    with dpg.draw_node(parent=self.draw_layer_id):
-                        dpg.draw_circle([screen_x + W//8, screen_y + H//4], 5, color=(0, 255, 0), fill=(0, 255, 0))
-                        
-                        # p = [0, 0]
-                        # if i + 1 < len(self.current_model.nodes) :
-                        #     n = self.current_model.nodes[i+1]
-                        #     y = dpg.mvVec4(*n.point, 1.0)
-                        #     q = y * transform
-                        #     p[0] = q[0] + W//8
-                        #     p[1] = q[1] + H//4
-                        
-                        # dpg.draw_line(p1=[screen_x + 500, screen_y + 500], p2=p, color=eval(config("LineColor")), thickness=2)
 
-                # Получаем экранные координаты (w=1, поэтому деление не нужно)
-                screen_x = transformed[0] + W//8
-                screen_y = transformed[1] + H//4
-                print(f"Point {i} (id={node.id}): model={node.point}, screen=({screen_x}, {screen_y})")
-                
-            #     # Вычисляем расстояние до курсора
-            #     distance = ((screen_x - mouse_pos[0])**2 + (screen_y - mouse_pos[1])**2)**0.5
-                
-            #     if distance < threshold and distance < min_distance:
-            #         min_distance = distance
-            #         closest_node = node
-            
-            # if closest_node:
-            #     return closest_node.id
-            # else:
-            #     return None
-        
+            dpg.draw_circle(mouse_pos.asList(), 5, color=(255, 255, 0), fill=(255, 255, 0), parent=self.current_model.draw_node_id)
+
+
     def mouse_wheel_handler(self, sender, app_data, user_data):
         if self.current_model:
-            self.current_model.set_scale(self.current_model.get_scale() * (1.5**app_data))
+            self.factor *= 1.5 ** app_data
+            self.current_model.set_scale(self.factor)
   
     def select_open_file_cb(self, sender, app_data, user_data):
         self.current_model = Model()
@@ -161,7 +98,7 @@ class Window:
         print(self.models)
         self.current_model = self.tabs.get(app_data).model
 
-    def build_diagram(self, type, model, start_node, end_node, diagram):
+    def build_diagram(self, type, model: Model, start_node, end_node, diagram):
         model.diagrams.append(Diagram(1001, type, start_node, end_node, diagram, model=model))
 
     def apply_force(self, sup):
@@ -242,6 +179,31 @@ class Window:
                 
         return applied_sups, unit_forces
         
+    def calculate_bending(self, M, model: Model, area):
+        model.name = "bending_diagram"
+        
+        minW = abs(M).max()/sigma
+
+        I = self.sortament.find_by_Wx(minW)
+        if not I:
+            raise Exception("Подходящая балка не найдена по сортаменту")
+
+        # Нормализуем
+        M = M / (E * I)
+        # # Интегрируем
+        theta = self.calc.integrate(M)
+        v = self.calc.integrate(theta)
+
+        # Нормализация прогиба по граничным условиям
+        v -= v[0]                      # обнуляем левый конец
+        v -= np.linspace(0, v[-1], len(v))  # убираем наклон (вторую постоянную)
+
+        model.get_loads().clear()
+        model.get_supports().clear()
+
+        self.build_diagram(2, model, area[0], area[1], v)
+        self.create_tab(model)
+        
     def calculate(self):
         
         if self.current_model.dsi < 0:
@@ -256,20 +218,20 @@ class Window:
         
         eq_models = [self.current_model.copy() for _ in range(dsi)]
         for em in eq_models:
-            em.data.get("loads").clear()
+            em.get_loads().clear()
 
         sups, forces = self.make_determinate()
         
         for i, em in enumerate(eq_models):
-            em.data.get("loads").append(forces[i])
+            em.get_loads().append(forces[i])
         
         base_model = self.current_model.copy()
-        base_model.data.update({"supports": sups})
+        base_model.update_data({"supports": sups})
         
         for em in eq_models:
-            em.data.update({"supports": sups})
+            em.update_data({"supports": sups})
 
-        area = [self.current_model.data.get("nodes")[0], self.current_model.data.get("nodes")[-1]]
+        area = [self.current_model.get_nodes()[0], self.current_model.get_nodes()[-1]]
 
         M1Vb, M1Mb = self.calc.calc(base_model, sups[0], sups[1])
         self.build_diagram(0, base_model, area[0], area[1], M1Vb)
@@ -293,7 +255,6 @@ class Window:
 
             self.create_tab(em)
 
-
         A, B = self.calc.Mores_integral(len(M1Mes[0]) if M1Mes else 0, M1Mes, M1Mb)
         X = self.calc.solve(A, B*-1)
         
@@ -304,11 +265,9 @@ class Window:
         
         result_model = base_model.copy()
         for i, em in enumerate(eq_models):
-            result_model.data.get("loads").append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
+            result_model.get_loads().append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
             
-        result_model.name = "result"
-        result_model.name += "_diagram"
-
+        result_model.name = "result_diagram"
         
         res_A, res_B = self.calc.calc(result_model, sups[0], sups[1])
         
@@ -316,37 +275,10 @@ class Window:
         self.build_diagram(1, result_model, area[0], area[1], res_B)
 
         self.create_tab(result_model)
-        minW = abs(res_B).max()/sigma
         
-        i_beams = load_channels_from_csv("python/data/IBeam.csv")
-        I = 0
-        for k, v in i_beams.items():
-            if  v.Wx  > minW:
-                print("Подходит двутавр: ", k)
-                I = v.Ix
-                break
-        if I == 0:
-            I = 0.000000000000000001
-
         bending_model = result_model.copy()
-        bending_model.name = "bending"
-        bending_model.name += "_diagram"
-
-        # Нормализуем
-        M = res_B / (E * I)
-        # # Интегрируем
-        theta = self.calc.integrate(M)
-        v = self.calc.integrate(theta)
-
-        # Нормализация прогиба по граничным условиям
-        v -= v[0]                      # обнуляем левый конец
-        v -= np.linspace(0, v[-1], len(v))  # убираем наклон (вторую постоянную)
-
-        bending_model.data.get("loads").clear()
-        bending_model.data.get("supports").clear()
-
-        self.build_diagram(2, bending_model, area[0], area[1], v)
-        self.create_tab(bending_model)
+        
+        self.calculate_bending(res_B, bending_model, area)
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
@@ -364,12 +296,11 @@ class Window:
             dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
     def create_tab(self, model:Model):
-        tab = Tab(model)
+        tab = Tab(model, self.factor)
         self.tabs.update({tab.tab_id:tab})
         self.models.update({model.name: model})
-
+        self._build_editable_tree("##dynamic_tree_root1", model.data)
         return tab.tab_id
-        # dpg.delete_item("file_dialog_id")
 
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
         """Рекурсивное построение дерева с элементами редактирования"""
@@ -426,15 +357,7 @@ class Window:
                             width=150,
                             callback=self._update_data
                         )
-                        dpg.add_text(f"Material:")
 
-                        dpg.add_input_text(
-                            default_value=str(value.material),
-                            # tag=path,
-                            width=200,
-                            callback=self._update_data
-                        )
-                        
             elif isinstance(value, (Fixed, Roller, Pinned)):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
@@ -443,7 +366,6 @@ class Window:
 
                         dpg.add_input_int(
                             default_value=value.node.id,
-                            # tag=f"{path}",
                             width=150,
                             callback=self._update_data
                         )
@@ -452,7 +374,6 @@ class Window:
                             for i, num in enumerate(value.direction.asList()):
                                 dpg.add_input_float(
                                     default_value=num,
-                                    # tag=f"{path}[{i}]",
                                     width=150,
                                     callback=self._update_data
                                 )
@@ -464,7 +385,6 @@ class Window:
 
                         dpg.add_input_int(
                             default_value=value.node.id,
-                            # tag=f"{path}",
                             width=150,
                             callback=self._update_data
                         )
@@ -473,7 +393,6 @@ class Window:
                             for i, num in enumerate(value.direction.asList()):
                                 dpg.add_input_float(
                                     default_value=num,
-                                    # tag=f"{path}[{i}]",
                                     width=150,
                                     callback=self._update_data
                                 )
@@ -485,7 +404,6 @@ class Window:
 
                         dpg.add_input_int(
                             default_value=value.node.id,
-                            # tag=f"{path}",
                             width=150,
                             callback=self._update_data
                         )
@@ -494,7 +412,6 @@ class Window:
                             for i, num in enumerate(value.direction.asList()):
                                 dpg.add_input_float(
                                     default_value=num,
-                                    # tag=f"{path}[{i}]",
                                     width=150,
                                     callback=self._update_data
                                 )
@@ -502,7 +419,6 @@ class Window:
                         dpg.add_text(f"Lenght:")
                         dpg.add_input_float(
                             default_value=value.lenght,
-                            # tag=f"{path}",
                             width=150,
                             callback=self._update_data
                         )
@@ -544,11 +460,11 @@ class Window:
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.11", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.12", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
-                    dpg.add_menu_item(label="Save", callback=self._save_to_file, user_data="")
+                    dpg.add_menu_item(label="Save", callback=self._save_to_file)
                     dpg.add_menu_item(label="Save As", callback=self._save_to_file)
 
                 with dpg.menu(label="Calculate"):
@@ -567,7 +483,7 @@ class Window:
                         
                 # Правый блок — Инспектор
                 # Inspector()
-                with dpg.child_window(width=W//1, height=H):
+                with dpg.child_window(width=W, height=H):
                     self._build_editable_tree("##dynamic_tree_root", self.current_model.data)
                     
                 dpg.add_text("Inspector")
@@ -583,7 +499,7 @@ class Window:
         dpg.bind_font(default_font)
         
         with dpg.handler_registry():
-            # dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
+            dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
 
             dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
             dpg.add_mouse_wheel_handler(callback=self.mouse_wheel_handler)

@@ -21,3 +21,5 @@ class Support(Object):
     def __dict__(self):
         return {"node": self.node.id, "direction": self.direction.__dict__}
     
+    def __deepcopy__(self, _):
+        return Support(self.id, self.node, self.direction)

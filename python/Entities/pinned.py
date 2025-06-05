@@ -14,6 +14,11 @@ from config import config
 class Pinned(Support):
     def __init__(self, id:int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
+                
+        self.transformation = TranslationMatrix(self.node.point)
+        self.rotation = RotationMatrix(self.direction.angle())
+        self.scale = ScaleMatrix(0.5)
+        
         self.dof = 2
         
         self.ctrlPoints.append(Point(0, 0))
@@ -28,13 +33,9 @@ class Pinned(Support):
             
     def geometry(self):
         self.primitives.clear()
+
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
         
-        mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix(self.direction.angle())
-        for i in range(len(self.ctrlPoints)):
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
-            
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("SupportColor")), 5))
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 3, (255, 255, 255), 5))
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("SupportColor")), 5))
@@ -44,3 +45,6 @@ class Pinned(Support):
             self.primitives.append(Line(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("SupportColor")), 5))
         
         return self.primitives
+    
+    def __deepcopy__(self, _):
+        return Pinned(self.id, self.node, self.direction)

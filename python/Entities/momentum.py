@@ -39,3 +39,6 @@ class Momentum(Load):
         self.primitives.append(Arrow(self.ctrlPoints[2].asList(), self.ctrlPoints[0].asList(), eval(config("ForceColor")), 2))
 
         return self.primitives
+    
+    def __deepcopy__(self, _):
+        return Momentum(self.id, self.node, self.direction)

@@ -7,7 +7,8 @@ class Point:
         
     def __dict__(self):
         return [self.x, self.y]
-    def __add__(self, other):
+    
+    def __add__(self, other: Vector):
         tmp = Point(self.x, self.y)
         tmp.x += other.x
         tmp.y += other.y
@@ -57,3 +58,6 @@ class Point:
     
     def asList(self):
         return [self.x, self.y]
+    
+    def __deepcopy__(self, _):
+        return Point(self.x, self.y)

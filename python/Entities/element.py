@@ -8,12 +8,10 @@ from .object import Object
 from config import config
 
 class Element(Object):
-    def __init__(self, id, start_node:Node, end_node:Node, type:str, material:str):
+    def __init__(self, id, start_node:Node, end_node:Node):
         super().__init__(id)
         self.start_node:Node = start_node
         self.end_node:Node = end_node
-        self.type:str = type
-        self.material:str = material
         self.ctrlPoints.append(Point())
         self.ctrlPoints.append(Point(1, 0))
 
@@ -35,3 +33,6 @@ class Element(Object):
         
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), color=eval(config("LineColor")), thickness=5))
         return self.primitives
+    
+    def __deepcopy__(self, _):
+        return Element(self.id, self.start_node, self.end_node)

@@ -60,14 +60,15 @@ def draw(primitive, node_id):
 class Tab:
     far = 1000
 
-    def __init__(self, model: Model):
+    def __init__(self, model: Model, factor):
 
         self.model = model
         self.grid = []
         self.drawlist_id = None
         self.draw_layer_id = None
-        self.model.set_pos(Vector(W//8, H//4))
-
+        self.factor = factor
+        self.model.set_scale(self.factor)
+        self.model.set_pos(Vector(W//4, H//2))
         # Создаем вкладку и все дочерние элементы
         with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
             with dpg.drawlist(width=W, height=H, parent=self.tab_id) as self.drawlist_id:

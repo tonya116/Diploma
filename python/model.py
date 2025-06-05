@@ -1,6 +1,9 @@
-﻿import json
+﻿from ast import Load
+import json
 import math
 import os
+from copy import deepcopy
+
 from dearpygui import dearpygui as dpg
 from pydantic import BaseModel
 from Entities.force import Force
@@ -11,7 +14,7 @@ from Entities.element import Element
 from Entities.fixed import Fixed
 from Entities.pinned import Pinned
 from Entities.roller import Roller
-
+from Entities.prop import Support
 from Entities.momentum import Momentum
 
 from Geometry.Vector import Vector
@@ -22,9 +25,7 @@ from Entities.diagrams import Diagram
 class Model:
     def __init__(self):
 
-        self.x = 0
-        self.y = 0
-        
+        self.pos = Point()
         self.scale = 1
         
         self.data = {}
@@ -35,18 +36,14 @@ class Model:
         self.draw_node_id = dpg.generate_uuid()
         self.diagrams: list[Diagram] = [] 
         
-        self.proj = dpg.create_orthographic_matrix(0, 1, 0, 1, 0, 1)
-
     def move(self, delta: Vector):
-        self.x += delta.x
-        self.y += delta.y
+        self.pos += delta
 
     def set_pos(self, point:Vector):
-        self.x = point.x
-        self.y = point.y
+        self.pos = Point(*point.asList())
 
     def get_pos(self):
-        return Vector(self.x, self.y)
+        return self.pos
 
     def load_model(self, filename:str):
         self.filename = filename
@@ -63,7 +60,7 @@ class Model:
             data = json.load(file)
         self.__parse_model(data)
                 
-        for sup in self.data.get("supports"):
+        for sup in self.get_supports():
             self.dsi += sup.dof
                 
     def __parse_model(self, data:dict):
@@ -74,7 +71,7 @@ class Model:
         supports = []
         for node in data.get("nodes"):
             nodes.append(Node(node.get("id"), Point(*node.get("coordinates"))))
-        self.data.update({"nodes": nodes})
+        self.update_data({"nodes": nodes})
 
         for element in data.get("elements"):
             elements.append(
@@ -82,10 +79,8 @@ class Model:
                     element.get("id"),
                     self.data.get("nodes")[element.get("start_node") - 1],
                     self.data.get("nodes")[element.get("end_node") - 1],
-                    element.get("type"),
-                    element.get("material"),
             ))
-        self.data.update({"elements": elements})
+        self.update_data({"elements": elements})
 
         for load in data.get("loads"):
             if load.get("type") == "force":
@@ -94,7 +89,7 @@ class Model:
                 loads.append(DistributedForce(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
             elif load.get("type") == "momentum":
                 loads.append(Momentum(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("momentum"))))
-        self.data.update({"loads": loads})
+        self.update_data({"loads": loads})
 
         for support in data.get("supports"):
             if support.get("type") == "fixed":
@@ -104,8 +99,20 @@ class Model:
             elif support.get("type") == "roller":
                 supports.append(Roller(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
                 
-        self.data.update({"supports": supports})
+        self.update_data({"supports": supports})
         
+    def get_nodes(self) -> list[Node]:
+        return self.data.get("nodes")
+    def get_supports(self) -> list[Support]:
+        return self.data.get("supports")
+    def get_elements(self) -> list[Element]:
+        return self.data.get("elements")
+    def get_loads(self) -> list[Load]:
+        return self.data.get("loads")
+        
+    def update_data(self, data):
+        self.data.update(data)   
+                              
     def save_to_file(self, filename:str):
         print(filename)
         if not filename:
@@ -121,11 +128,11 @@ class Model:
     def update(self):
         self.model_matrix = (
             
-            dpg.create_translation_matrix([self.x, self.y])
+            dpg.create_translation_matrix(self.pos.asList())
             * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
         )
         dpg.apply_transform(
-            self.draw_node_id, self.proj * self.model_matrix
+            self.draw_node_id, self.model_matrix
         )
 
     def get_model_matrix(self):
@@ -139,6 +146,10 @@ class Model:
     
     def copy(self):
         tmp = Model()
-        tmp.load_model(config("DEFAULT_MODEL"))
+        tmp.pos = self.pos
+        tmp.filename = self.filename
+        tmp.data = deepcopy(self.data)
+        tmp.name = self.name
+        tmp.dsi = self.dsi
         return tmp
     

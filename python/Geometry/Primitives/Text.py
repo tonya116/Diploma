@@ -14,3 +14,6 @@ class Text(Entity):
     
     def __repr__(self):
         return self.__str__()
+
+    def __deepcopy__(self, _):
+        return Text(self.p1, self.text, self.color, self.thickness)

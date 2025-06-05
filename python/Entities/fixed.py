@@ -35,3 +35,6 @@ class Fixed(Support):
             self.primitives.append(Line(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("SupportColor")), 5))
         
         return self.primitives
+    
+    def __deepcopy__(self, _):
+        return Fixed(self.id, self.node, self.direction)
