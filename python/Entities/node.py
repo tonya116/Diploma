@@ -47,27 +47,6 @@ class Node(Object):
         # Предполагая, что Point может быть создан из словаря coordinates
         point = Point(*node_model.coordinates)
         return cls(node_model.id, point)
-    
-    
-if __name__ == "__main__":
-    # Создаем экземпляр Node
-    point = Point(x=10, y=20)  # предположим, что Point принимает x и y
-    node = Node(id=1, point=point)
-    
-    # Преобразуем в Pydantic-модель и затем в JSON
-    node_model = node.to_pydantic()
-    
-    print(node_model.__str__())
-    
-    json_str = node_model.model_dump_json(indent=2)
-    print(json_str)
-    
-    # Сохраняем в файл
-    with open("test.txt", "w") as f:
-        f.write(json_str)
-    
-    # Загружаем из файла и создаем Node
-    with open("test.txt", "r") as f:
-        loaded_model = NodeModel.model_validate_json(f.read())
-    loaded_node = Node.from_pydantic(loaded_model)
-    print(loaded_node)
+
+    def __deepcopy__(self, _):
+        return Node(self.id, self.point)

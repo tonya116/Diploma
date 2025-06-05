@@ -15,3 +15,6 @@ class Line(Entity):
     
     def __repr__(self):
         return self.__str__()
+
+    def __deepcopy__(self, _):
+        return Line(self.p1, self.p2, self.color, self.thickness)

@@ -16,10 +16,10 @@ class DistributedForce(Load):
         
         self.transformation = TranslationMatrix(self.node.point)
         self.rotation = RotationMatrix(self.direction.angle())
-        self.scale = ScaleMatrix(0.5)
+        self.scale = ScaleMatrix()
 
-        self.ctrlPoints.append(Point(-self.lenght, -2))
-        self.ctrlPoints.append(Point(self.lenght, -2))
+        self.ctrlPoints.append(Point(-self.lenght/2, -2))
+        self.ctrlPoints.append(Point(self.lenght/2, -2))
         
         n = 4
         step = self.lenght/n
@@ -48,3 +48,6 @@ class DistributedForce(Load):
             self.primitives.append(Arrow(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("ForceColor")), 1))
 
         return self.primitives
+    
+    def __deepcopy__(self, _):
+        return DistributedForce(self.id, self.node, self.direction, self.lenght)

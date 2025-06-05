@@ -9,3 +9,6 @@ class Circle(Entity):
 
     def translate(self, point:Vector):
         self.pos = point
+
+    def __deepcopy__(self, _):
+        return Circle(self.pos, self.radius, self.color ,self.thickness)
