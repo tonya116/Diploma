@@ -18,9 +18,9 @@ class Application:
     def __init__(self):
         self.current_model: Model = None
         self.calc: Calculations = Calculations()
-        self.models: dict = {}
         self.sortament = Sortament()
         self.w = Window(self)
+        self.models: dict = {}
         self.w.run()
         
     def calculate(self):
@@ -45,6 +45,7 @@ class Application:
             em.get_loads().append(forces[i])
         
         base_model = self.current_model.copy()
+        base_model.name += "_diagram"
         base_model.update_data({"supports": sups})
         
         for em in eq_models:
@@ -55,7 +56,6 @@ class Application:
         M1Vb, M1Mb = self.calc.calc(base_model, sups[0], sups[1])
         self.build_diagram(0, base_model, area[0], area[1], M1Vb)
         self.build_diagram(1, base_model, area[0], area[1], M1Mb)
-        base_model.name += "_diagram"
 
         self.w.create_tab(base_model)
     
@@ -68,10 +68,9 @@ class Application:
             M1Mes.append(M1Me)
 
         for i, em in enumerate(eq_models):
-            em.name = f"X{i+1}"  
+            em.name = f"X{i+1}_diagram"  
             self.build_diagram(0, em, area[0], area[1], M1Ves[i]) 
             self.build_diagram(1, em, area[0], area[1], M1Mes[i]) 
-            em.name += "_diagram"
 
             self.w.create_tab(em)
 
@@ -80,8 +79,9 @@ class Application:
         
         print("Матрица деформаций: \n", A)
         print("Матрица деформаций от внешних нагрузок: \n", B)
-
         print("Найденные реакции: \n", X)
+        
+        self.w.add_find_loads(X)
         
         result_model = base_model.copy()
         for i, em in enumerate(eq_models):
@@ -207,3 +207,5 @@ class Application:
         self.build_diagram(2, model, area[0], area[1], v)
         self.w.create_tab(model)
     
+    def add_model(self, model: Model):
+        self.models.update({model.name: model})

@@ -7,7 +7,6 @@ class Copyable:
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result  # Добавляем в memo для избежания циклических ссылок
-        print(self.__dict__)
         # Копируем все атрибуты
         for k, v in self.__dict__.items():
             setattr(result, k, copy.deepcopy(v, memo))

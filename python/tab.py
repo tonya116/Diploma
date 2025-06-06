@@ -92,24 +92,13 @@ class Tab:
         for obj in self.model.diagrams:
             
             self.draw_grid(obj.apply_transformation(obj.interest_points))
-
-        for obj in self.model.data.get("supports"):
-            for prim in obj.geometry():
-                draw(prim, self.model.draw_node_id)
-   
-        for obj in self.model.data.get("elements"):
-            for prim in obj.geometry():
-                draw(prim, self.model.draw_node_id)
-
-        for obj in self.model.data.get("nodes"):
-            for prim in obj.geometry():
-                draw(prim, self.model.draw_node_id)
-
-        for obj in self.model.data.get("loads"):
-            for prim in obj.geometry():
-                draw(prim, self.model.draw_node_id)
-
         
+        order = ["supports", "elements", "nodes", "loads"]
+        for element in order:
+            for obj in self.model.data.get(element):
+                for prim in obj.geometry():
+                    draw(prim, self.model.draw_node_id)
+    
         for obj in self.model.diagrams:
             for prim in obj.geometry():
                 draw(prim, self.model.draw_node_id)

@@ -21,7 +21,7 @@ H = int(config("HEIGHT"))
 
 DEFAULT = True
 
-TITLE = "HyperBeam"
+TITLE = "HyprBeam"
 
 class Window:
     def __init__(self, app):
@@ -38,10 +38,10 @@ class Window:
         if not self.app.current_model:
             return
 
-        # if app_data == dpg.mvKey_Q:
-        #     self.app.current_model.move(Vector(30, 0))
-        # if app_data == dpg.mvKey_E:
-        #     self.app.current_model.move(Vector(-30, 0))
+        if app_data == dpg.mvKey_Q:
+            self.app.current_model.move(Vector(30, 0))
+        if app_data == dpg.mvKey_E:
+            self.app.current_model.move(Vector(-30, 0))
 
     def mouse_drag_handler(self, sender, app_data, user_data):
         if self.app.current_model:
@@ -90,8 +90,7 @@ class Window:
     def create_tab(self, model:Model):
         tab = Tab(model, self.factor)
         self.tabs.update({tab.tab_id:tab})
-        self.app.models.update({model.name: model})
-        # self._build_editable_tree("##dynamic_tree_root1", model.data)
+        self.app.add_model(model)
         return tab.tab_id
 
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
@@ -250,9 +249,15 @@ class Window:
         """Сохранение данных в файл"""
         self.app.current_model.save_to_file(user_data)
        
+    def add_find_loads(self, values):
+        dpg.add_text(f"Found reactions", parent="inspector")   
+
+        for i, x in enumerate(values):
+            dpg.add_text(f"X{i+1}: {x}", parent="inspector")   
+       
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.12", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.13", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
@@ -275,18 +280,20 @@ class Window:
                         
                 # Правый блок — Инспектор
                 # Inspector()
-                with dpg.child_window(width=W, height=H):
+                with dpg.child_window(width=W, height=H, tag="inspector"):
+                    dpg.add_text("Inspector")
+                    dpg.add_text(f"E - модуль упругости (Па)")
+
+                    dpg.add_input_int(tag="E", callback=self.callback)
+                    dpg.add_text(f"SIGMA")
+
+                    dpg.add_input_int(tag="sigma", callback=self.callback)
                     self._build_editable_tree("##dynamic_tree_root", self.app.current_model.data)
                     
-                dpg.add_text("Inspector")
-                dpg.add_text("Selected Node:", tag="node_id_text")
-                dpg.add_input_int(label="X", tag="x_coord", callback=self.callback)
-                dpg.add_input_int(label="Y", tag="y_coord", callback=self.callback)
         # Регистрируем шрифт
         with dpg.font_registry():
             # Первый параметр - размер, второй - путь к файлу шрифта
-            default_font = dpg.add_font(config("FONT"), int(config("FONT_SIZE")))
-
+            default_font = dpg.add_font(config("FONT"), int(config("FONT_SIZE")), tag="rus_font")
         # Устанавливаем шрифт по умолчанию для всех элементов
         dpg.bind_font(default_font)
         

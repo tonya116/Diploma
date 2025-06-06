@@ -17,8 +17,7 @@ class Object(Copyable):
         self.transformation = TranslationMatrix()
         self.rotation = RotationMatrix()
         self.scale = ScaleMatrix()
-
-
+        
     def apply_transformation(self, list):       
         return [list[i] @ self.scale @ self.rotation @ self.transformation for i in range(len(list))]
     
