@@ -20,10 +20,7 @@ class Element(Object):
 
     def __repr__(self):
         return self.__str__()
-         
-    def __dict__(self):
-        return {"start_node": self.start_node.id, "end_node": self.end_node.id, "type": self.type, "material": self.material}
-    
+
     def geometry(self):
         self.primitives.clear()
 
@@ -33,6 +30,3 @@ class Element(Object):
         
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), color=eval(config("LineColor")), thickness=5))
         return self.primitives
-    
-    def __deepcopy__(self, _):
-        return Element(self.id, self.start_node, self.end_node)

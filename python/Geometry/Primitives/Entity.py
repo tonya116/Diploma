@@ -10,7 +10,3 @@ class Entity:
         self.rot = rot
         self.color = color
         self.thickness = thickness
-        
-    def __deepcopy__(self, _):
-        return Entity(self.pos, self.rot, self.color, self.thickness)
-    

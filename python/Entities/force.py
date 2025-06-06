@@ -31,5 +31,3 @@ class Force(Load):
 
         return self.primitives
     
-    def __deepcopy__(self, _):
-        return Force(self.id, self.node, self.direction)

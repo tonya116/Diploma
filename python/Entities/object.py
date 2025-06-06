@@ -3,8 +3,9 @@
 from Geometry.Point import Point
 from Geometry.Primitives.Entity import Entity
 from Geometry.Matrix import RotationMatrix, ScaleMatrix, TranslationMatrix
+from copyable import Copyable
 
-class Object:
+class Object(Copyable):
     m_id = -1
     def __init__(self, id: int = -1):
         self.id = id
@@ -17,11 +18,7 @@ class Object:
         self.rotation = RotationMatrix()
         self.scale = ScaleMatrix()
 
-    def __dict__(self):
-        return {"id": self.id}
-    
+
     def apply_transformation(self, list):       
         return [list[i] @ self.scale @ self.rotation @ self.transformation for i in range(len(list))]
     
-    def __deepcopy__(self, _):
-        return Object(self.id)

@@ -40,5 +40,3 @@ class Momentum(Load):
 
         return self.primitives
     
-    def __deepcopy__(self, _):
-        return Momentum(self.id, self.node, self.direction)

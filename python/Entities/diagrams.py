@@ -60,6 +60,3 @@ class Diagram(Object):
                     )
             
         return self.primitives
-
-    def __deepcopy__(self, l):
-        return Diagram(self.id, self.type, self.start_node, self.end_node, self.diagram.copy(), self.model)

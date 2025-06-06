@@ -62,6 +62,3 @@ class Vector:
         
     def ort(self):
         return Vector(self.x / self.norm(), self.y / self.norm())
-
-    def __deepcopy__(self, _):
-        return Vector(self.x, self.y)

@@ -32,10 +32,6 @@ class DistributedForce(Load):
 
     def __repr__(self):
         return self.__str__()
-
-         
-    def __dict__(self):
-        return {"lenght": self.lenght}
     
     def geometry(self):
         self.primitives.clear()
@@ -49,5 +45,3 @@ class DistributedForce(Load):
 
         return self.primitives
     
-    def __deepcopy__(self, _):
-        return DistributedForce(self.id, self.node, self.direction, self.lenght)

@@ -151,8 +151,6 @@ class Matrix:
         
         return Matrix(inverse_matrix)
     
-    def __deepcopy__(self, _):
-        return Matrix(self.data)
     
 class TranslationMatrix(Matrix):
     def __init__(self, dirVec: Vector = Vector()):

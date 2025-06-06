@@ -4,7 +4,7 @@ from .prop import Support
 import numpy as np
 from .node import Node
 from Geometry.Vector import Vector
-from Geometry.Matrix import RotationMatrix, TranslationMatrix
+from Geometry.Matrix import RotationMatrix, ScaleMatrix, TranslationMatrix
 from Geometry.Point import Point
 from Geometry.Primitives.Line import Line
 from config import config
@@ -14,6 +14,9 @@ class Fixed(Support):
         super().__init__(id, node, direction)
         self.dof = 3
 
+        self.transformation = TranslationMatrix(self.node.point)
+        self.rotation = RotationMatrix(self.direction.angle())
+        self.scale = ScaleMatrix(0)
         n = 2
         self.ctrlPoints.append(Point(-n, 0))
         self.ctrlPoints.append(Point(n, 0))
@@ -24,17 +27,9 @@ class Fixed(Support):
     def geometry(self):
         self.primitives.clear()
 
-        mt = TranslationMatrix(self.node.point)
-        mr = RotationMatrix(self.direction.angle())
-
-        for i in range(len(self.ctrlPoints)):
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mr
-            self.ctrlPoints[i] = self.ctrlPoints[i] @ mt
-
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
         for i in range(0, len(self.ctrlPoints), 2):
             self.primitives.append(Line(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("SupportColor")), 5))
         
         return self.primitives
     
-    def __deepcopy__(self, _):
-        return Fixed(self.id, self.node, self.direction)

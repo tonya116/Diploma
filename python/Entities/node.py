@@ -28,9 +28,6 @@ class Node(Object):
     def __repr__(self):
         return self.__str__()
     
-    def __dict__(self):
-        return {"id": self.id, "coordinates": self.point.__dict__()}
-    
     def geometry(self):
         self.primitives.clear()
         self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
@@ -38,15 +35,3 @@ class Node(Object):
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("NodeColor")), 5))
 
         return self.primitives
-    
-    def to_pydantic(self) -> 'NodeModel':
-        return NodeModel(**self.__dict__())
-    
-    @classmethod
-    def from_pydantic(cls, node_model: 'NodeModel'):
-        # Предполагая, что Point может быть создан из словаря coordinates
-        point = Point(*node_model.coordinates)
-        return cls(node_model.id, point)
-
-    def __deepcopy__(self, _):
-        return Node(self.id, self.point)
