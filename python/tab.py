@@ -59,7 +59,6 @@ def draw(primitive, node_id):
 
 class Tab:
     far = 1000
-
     def __init__(self, model: Model, factor):
 
         self.model = model
@@ -68,7 +67,13 @@ class Tab:
         self.draw_layer_id = None
         self.factor = factor
         self.model.set_scale(self.factor)
-        self.model.set_pos(Vector(W//4, H//2))
+        s = self.model.get_nodes()[0]
+        e = self.model.get_nodes()[-1]
+        d = e.point - s.point
+        
+        self.order = ["supports", "elements", "nodes", "loads"]
+
+        self.model.set_pos(Vector(W//4 - d.norm()/2*self.factor, H//2))
         # Создаем вкладку и все дочерние элементы
         with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
             with dpg.drawlist(width=W, height=H, parent=self.tab_id) as self.drawlist_id:
@@ -90,11 +95,9 @@ class Tab:
                 self.draw_grid(obj.apply_transformation(obj.interest_points))
                     
         for obj in self.model.diagrams:
-            
             self.draw_grid(obj.apply_transformation(obj.interest_points))
         
-        order = ["supports", "elements", "nodes", "loads"]
-        for element in order:
+        for element in self.order:
             for obj in self.model.data.get(element):
                 for prim in obj.geometry():
                     draw(prim, self.model.draw_node_id)
@@ -112,8 +115,8 @@ class Tab:
     def draw_grid(self, interest_points: list[Point]):
         
         for point in interest_points:
-            self.grid.append(Line(Point(point.x, self.far).asList(), Point(point.x, -self.far).asList(), (64, 64, 64), 1))
-            self.grid.append(Line(Point(self.far, point.y).asList(), Point(-self.far, point.y).asList(), (64, 64, 64), 1))
+            self.grid.append(Line(Point(point.x, self.far).asList(), Point(point.x, -self.far).asList(), eval(config("GridColor")), 1))
+            self.grid.append(Line(Point(self.far, point.y).asList(), Point(-self.far, point.y).asList(), eval(config("GridColor")), 1))
 
         for prim in set(self.grid):
             draw(prim, self.model.draw_node_id)
