@@ -102,7 +102,7 @@ class Application:
         
 
     def build_diagram(self, type, model: Model, start_node, end_node, diagram):
-        model.diagrams.append(Diagram(1001, type, start_node, end_node, diagram, model=model))
+        model.diagrams.append(Diagram(1001, type, start_node, end_node, diagram, model))
 
     def apply_force(self, sup):
         

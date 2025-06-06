@@ -77,26 +77,28 @@ class Model:
                 Element(
                     element.get("id"),
                     self.data.get("nodes")[element.get("start_node") - 1],
-                    self.data.get("nodes")[element.get("end_node") - 1],
+                    self.data.get("nodes")[element.get("end_node") - 1]
             ))
         self.update_data({"elements": elements})
 
         for load in data.get("loads"):
-            if load.get("type") == "force":
-                loads.append(Force(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction"))))
-            elif load.get("type") == "distributed_force":
-                loads.append(DistributedForce(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
-            elif load.get("type") == "momentum":
-                loads.append(Momentum(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("momentum"))))
+            match load.get("type"):
+                case "force":
+                    loads.append(Force(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction"))))
+                case "distributed_force":
+                    loads.append(DistributedForce(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
+                case "momentum":
+                    loads.append(Momentum(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction"))))
         self.update_data({"loads": loads})
 
         for support in data.get("supports"):
-            if support.get("type") == "fixed":
-                supports.append(Fixed(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
-            elif support.get("type") == "pinned":
-                supports.append(Pinned(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
-            elif support.get("type") == "roller":
-                supports.append(Roller(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+            match support.get("type"):
+                case "fixed":
+                    supports.append(Fixed(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+                case "pinned":
+                    supports.append(Pinned(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+                case "roller":
+                    supports.append(Roller(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
                 
         self.update_data({"supports": supports})
         
