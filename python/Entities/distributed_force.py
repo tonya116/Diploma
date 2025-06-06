@@ -26,6 +26,8 @@ class DistributedForce(Load):
         for i in range(-n//2, n//2+1):
             self.ctrlPoints.append(Point(i * step, 0))
             self.ctrlPoints.append(Point(i * step, -2))
+        
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
             
     def __str__(self):
         return f"DF: {self.node}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
@@ -35,8 +37,6 @@ class DistributedForce(Load):
     
     def geometry(self):
         self.primitives.clear()
-
-        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
 
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))
 

@@ -27,11 +27,11 @@ class Roller(Support):
         for i in range(-n//2, n+1):
             self.ctrlPoints.append(Point(i, 1))
             self.ctrlPoints.append(Point(i-1, 2))
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
             
     def geometry(self):
         self.primitives.clear()
         
-        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
         
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("SupportColor")), 5))
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 3, (255, 255, 255), 5))

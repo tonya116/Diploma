@@ -14,13 +14,14 @@ class NodeModel(BaseModel):
     coordinates: list[float]  # или создайте отдельную модель для Point
 
 class Node(Object):
-    def __init__(self, id, point:Point):
+    def __init__(self, id: int, point:Point):
         super().__init__(id)
         self.point:Point = point
         self.ctrlPoints.append(Point())
         self.interest_points.append(Point())
         
         self.transformation = TranslationMatrix(self.point)
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
 
     def __str__(self):
         return f"ID: {self.id}, Point: {self.point}"
@@ -30,7 +31,6 @@ class Node(Object):
     
     def geometry(self):
         self.primitives.clear()
-        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
         
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("NodeColor")), 5))
 

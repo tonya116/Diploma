@@ -23,11 +23,11 @@ class Fixed(Support):
         for i in range(-n//2, n+1):
             self.ctrlPoints.append(Point(i, 0))
             self.ctrlPoints.append(Point(i-1, 1))
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
 
     def geometry(self):
         self.primitives.clear()
 
-        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
         for i in range(0, len(self.ctrlPoints), 2):
             self.primitives.append(Line(self.ctrlPoints[i].asList(), self.ctrlPoints[i+1].asList(), eval(config("SupportColor")), 5))
         
