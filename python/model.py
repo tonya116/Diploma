@@ -54,7 +54,6 @@ class Model:
         node = Node(id=1, point=point)
         
         # Преобразуем в Pydantic-модель и затем в JSON
-        node_model = node.to_pydantic()
         
         with open(filename, "r", encoding="utf-8-sig") as file:
             data = json.load(file)
