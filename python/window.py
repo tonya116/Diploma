@@ -24,60 +24,44 @@ DEFAULT = True
 TITLE = "HyprBeam"
 
 class Window:
-    def __init__(self, app):
-        self.app = app
-        self.tabs: dict = {}
-        self.factor = 30
-
+    def __init__(self, callbacks):
+        self.callbacks: dict = callbacks
         # Настройка интерфейса
         dpg.create_context()
         dpg.create_viewport(title=TITLE, width=W, height=H)
         dpg.setup_dearpygui()
 
-    def key_down_handler(self, sender, app_data, user_data):
-        if not self.app.current_model:
-            return
-
-        if app_data == dpg.mvKey_Q:
-            self.app.current_model.move(Vector(30, 0))
-        if app_data == dpg.mvKey_E:
-            self.app.current_model.move(Vector(-30, 0))
+        # Регистрируем шрифт
+        with dpg.font_registry():
+            # Первый параметр - размер, второй - путь к файлу шрифта
+            default_font = dpg.add_font(config("FONT"), int(config("FONT_SIZE")), tag="rus_font")
+            # Устанавливаем шрифт по умолчанию для всех элементов
+            dpg.bind_font(default_font)
 
     def mouse_drag_handler(self, sender, app_data, user_data):
-        if self.app.current_model:
+        if self.app.active_tab:
             f = Vector(*dpg.get_mouse_pos()) 
-            current_pos = self.app.current_model.get_pos()
+            current_pos = self.active_tab.model.get_pos()
             # self.app.current_model.set_pos(f + (f - current_pos))
 
     def mouse_double_click_handler(self, sender, app_data, user_data):
-        if self.app.current_model and app_data == dpg.mvMouseButton_Left:
+        if self.app.active_tab and app_data == dpg.mvMouseButton_Left:
             mouse_pos = Vector(*dpg.get_drawing_mouse_pos()) - Vector(W//4, H//2)
             print(f"Mouse position: {mouse_pos}")
-            dpg.draw_circle(mouse_pos.asList(), 5, color=(255, 255, 0), fill=(255, 255, 0), parent=self.app.current_model.draw_node_id)
+            dpg.draw_circle(mouse_pos.asList(), 5, color=(255, 255, 0), fill=(255, 255, 0), parent=self.app.active_tab.model.draw_node_id)
 
-    def mouse_wheel_handler(self, sender, app_data, user_data):
-        if self.app.current_model:
-            self.factor *= 1.5 ** app_data
-            self.app.current_model.set_scale(self.factor)
-  
     def select_open_file_cb(self, sender, app_data, user_data):
+        model = Model()
+        model.load_model(app_data.get("file_path_name"))
+        self.callbacks.get("create_tab")(model)
         
-        self.app.current_model = Model()
-        self.app.current_model.load_model(app_data.get("file_path_name"))
-        self.create_tab(self.app.current_model)
-
-    # Функция для проверки активного таба
-    def tab_change_callback(self, sender, app_data, user_data):
-        print(f"Active tab: {app_data}")
-        print(self.app.models)
-        self.app.current_model = self.tabs.get(app_data).model
 
     def callback(self, sender, app_data, user_data):
         print("Sender: ", sender)
         print("App Data: ", app_data)
         print("User Data: ", user_data)
 
-    def create_file_dialog(self):
+    def _create_file_dialog(self):
         with dpg.file_dialog(
             directory_selector=False,
             callback=self.select_open_file_cb,
@@ -87,11 +71,6 @@ class Window:
         ):
             dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
-    def create_tab(self, model:Model):
-        tab = Tab(model, self.factor)
-        self.tabs.update({tab.tab_id:tab})
-        self.app.add_model(model)
-        return tab.tab_id
 
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
         """Рекурсивное построение дерева с элементами редактирования"""
@@ -136,7 +115,6 @@ class Window:
 
                         dpg.add_input_int(
                             default_value=value.start_node.id,
-                            # tag=f"Element.{value.id}.start_node.id",
                             width=150,
                             callback=self._update_data
                         )
@@ -253,70 +231,58 @@ class Window:
         dpg.add_text(f"Found reactions", parent="inspector")   
 
         for i, x in enumerate(values):
-            dpg.add_text(f"X{i+1}: {x}", parent="inspector")   
+            dpg.add_text(f"X{i+1}: {x:.5} KH", parent="inspector")   
        
     def setup(self):
         # Основное окно
         with dpg.window(label="Build v0.0.13", tag="main_window", width=W, height=H):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
-                    dpg.add_menu_item(label="Open", callback=self.create_file_dialog)
+                    dpg.add_menu_item(label="Open", callback=self._create_file_dialog)
                     dpg.add_menu_item(label="Save", callback=self._save_to_file)
                     dpg.add_menu_item(label="Save As", callback=self._save_to_file)
 
                 with dpg.menu(label="Calculate"):
-                    dpg.add_menu_item(label="Run", callback=self.app.calculate)
+                    dpg.add_menu_item(label="Run", callback=self.callbacks.get("calculate"))
                     
             with dpg.group(horizontal=True):
-
+                if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
+                    model = Model()
+                    model.load_model(config("DEFAULT_MODEL"))
                 # Левый блок — Канвас
                 with dpg.child_window(width=W//2, height=H):
                     # Вкладки для переключения моделей
-                    with dpg.tab_bar(tag="tab_bar", callback=self.tab_change_callback):
+                    with dpg.tab_bar(tag="tab_bar", callback=self.callbacks.get("tab_change_callback")):
                         if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
-                            self.app.current_model = Model()
-                            self.app.current_model.load_model(config("DEFAULT_MODEL"))
-                            self.create_tab(self.app.current_model)
+                            self.callbacks.get("create_tab")(model)
                         
                 # Правый блок — Инспектор
                 # Inspector()
-                with dpg.child_window(width=W, height=H, tag="inspector"):
+                with dpg.child_window(width=W//2, height=H, tag="inspector"):
                     dpg.add_text("Inspector")
                     dpg.add_text(f"E - модуль упругости (Па)")
 
-                    dpg.add_input_int(tag="E", callback=self.callback)
+                    dpg.add_input_int(tag="E", width=100, callback=self.callback)
                     dpg.add_text(f"SIGMA")
 
-                    dpg.add_input_int(tag="sigma", callback=self.callback)
-                    self._build_editable_tree("##dynamic_tree_root", self.app.current_model.data)
-                    
-        # Регистрируем шрифт
-        with dpg.font_registry():
-            # Первый параметр - размер, второй - путь к файлу шрифта
-            default_font = dpg.add_font(config("FONT"), int(config("FONT_SIZE")), tag="rus_font")
-        # Устанавливаем шрифт по умолчанию для всех элементов
-        dpg.bind_font(default_font)
+                    dpg.add_input_int(tag="sigma", width=100, callback=self.callback)
+                    self._build_editable_tree("##dynamic_tree_root", model.data)
         
         with dpg.handler_registry():
             dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
-
             dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
-            dpg.add_mouse_wheel_handler(callback=self.mouse_wheel_handler)
-            # dpg.add_key_down_handler(callback=self.key_down_handler)
-            dpg.add_key_press_handler(callback=self.key_down_handler)
+            dpg.add_mouse_wheel_handler(callback=self.callbacks.get("mouse_wheel_handler"))
+            dpg.add_key_down_handler(callback=self.callbacks.get("key_down_handler"))
+            dpg.add_key_press_handler(callback=self.callbacks.get("key_down_handler"))
         dpg.set_primary_window("main_window", True)
 
-
     def run(self):
-        
         self.setup()
-        
         dpg.show_viewport()
         
         while dpg.is_dearpygui_running():
-            if self.app.current_model:
-                self.app.current_model.update()
+            # if self.active_tab:
+            #     self.active_tab.model.update()
 
             dpg.render_dearpygui_frame()
-
         dpg.destroy_context()

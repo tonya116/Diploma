@@ -9,6 +9,7 @@ from Entities.momentum import Momentum
 from Entities.pinned import Pinned
 from Entities.roller import Roller
 from Geometry.Vector import Vector
+from tab import Tab
 from window import Window
 
 sigma = 180e6
@@ -16,26 +17,34 @@ E = 2e11  # модуль упругости (Па)
 
 class Application:
     def __init__(self):
-        self.current_model: Model = None
+        self.callbacks = {
+            "calculate": self.calculate,
+            "create_tab": self.create_tab,
+            "mouse_wheel_handler": self.mouse_wheel_handler,
+            "tab_change_callback": self.tab_change_callback,
+            "key_down_handler": self.key_down_handler
+        }
+        self.w = Window(self.callbacks)
         self.calc: Calculations = Calculations()
         self.sortament = Sortament()
-        self.w = Window(self)
-        self.models: dict = {}
+        # self.models: dict = {}
+        self.active_tab: Tab = None
+        self.tabs: dict = {}
+        
+    def run(self):
         self.w.run()
         
     def calculate(self):
-        
-        if self.current_model.dsi < 0:
-            raise Exception("DSI < 0; Something went wrong")
-        elif self.current_model.dsi == 0:
-            print("DSI = 0; Система статически определимая")
-
+        dsi = self.active_tab.model.dsi
+        if dsi < 0:
+            raise Exception("DSI < 0; Конструкция является механизмом")
+        elif dsi == 0:
+            print("DSI = 0; Система статически определима")
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
         
-        dsi = self.current_model.dsi
         
-        eq_models = [self.current_model.copy() for _ in range(dsi)]
+        eq_models = [self.active_tab.model.copy() for _ in range(dsi)]
         for em in eq_models:
             em.get_loads().clear()
 
@@ -44,20 +53,20 @@ class Application:
         for i, em in enumerate(eq_models):
             em.get_loads().append(forces[i])
         
-        base_model = self.current_model.copy()
+        base_model = self.active_tab.model.copy()
         base_model.name += "_diagram"
         base_model.update_data({"supports": sups})
         
         for em in eq_models:
             em.update_data({"supports": sups})
 
-        area = [self.current_model.get_nodes()[0], self.current_model.get_nodes()[-1]]
+        area = [self.active_tab.model.get_nodes()[0], self.active_tab.model.get_nodes()[-1]]
 
         M1Vb, M1Mb = self.calc.calc(base_model, sups[0], sups[1])
         self.build_diagram(0, base_model, area[0], area[1], M1Vb)
         self.build_diagram(1, base_model, area[0], area[1], M1Mb)
 
-        self.w.create_tab(base_model)
+        self.create_tab(base_model)
     
         M1Ves = []
         M1Mes = []
@@ -72,7 +81,7 @@ class Application:
             self.build_diagram(0, em, area[0], area[1], M1Ves[i]) 
             self.build_diagram(1, em, area[0], area[1], M1Mes[i]) 
 
-            self.w.create_tab(em)
+            self.create_tab(em)
 
         A, B = self.calc.Mores_integral(len(M1Mes[0]) if M1Mes else 0, M1Mes, M1Mb)
         X = self.calc.solve(A, B*-1)
@@ -94,7 +103,7 @@ class Application:
         self.build_diagram(0, result_model, area[0], area[1], res_A)
         self.build_diagram(1, result_model, area[0], area[1], res_B)
 
-        self.w.create_tab(result_model)
+        self.create_tab(result_model)
         
         bending_model = result_model.copy()
         
@@ -124,7 +133,7 @@ class Application:
 
     def make_determinate(self):
   
-        sups = self.current_model.data.get("supports")
+        sups = self.active_tab.model.data.get("supports")
         
         applied_sups = []
         unit_forces = []
@@ -205,7 +214,37 @@ class Application:
         model.get_supports().clear()
 
         self.build_diagram(2, model, area[0], area[1], v)
-        self.w.create_tab(model)
+        self.create_tab(model)
     
-    def add_model(self, model: Model):
-        self.models.update({model.name: model})
+    # def add_model(self, model: Model):
+    #     self.models.update({model.name: model})
+        
+    def create_tab(self, model:Model):
+        tab = Tab(model)
+        self.tabs.update({tab.tab_id:tab})
+        # self.add_model(model)
+        self.active_tab = tab
+    
+    def mouse_wheel_handler(self, sender, app_data, user_data):
+        if self.active_tab:
+            self.active_tab.factor *= 1.5 ** app_data
+            self.active_tab.model.set_scale(self.active_tab.factor)
+            
+    # Функция для проверки активного таба
+    def tab_change_callback(self, sender, app_data, user_data):
+        self.active_tab = self.tabs.get(app_data)
+
+    def key_down_handler(self, sender, app_data, user_data):
+            if not self.active_tab:
+                return
+            dx = Vector()
+            # match app_data:
+            #     case dpg.mvKey_Q:
+            #         dx = Vector(30, 0)
+            #     case dpg.mvKey_E:
+            #         dx = Vector(-30, 0)
+            #     case dpg.mvKey_W:
+            #         dx = Vector(0, 30)
+            #     case dpg.mvKey_S:
+            #         dx = Vector(-30, 0)
+            self.active_tab.model.move(dx)

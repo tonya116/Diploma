@@ -38,7 +38,6 @@ class Diagram(Object):
     def geometry(self):
         self.primitives.clear()
         dx = float(config("DX"))
-        
 
         for point in self.interest_points:
             

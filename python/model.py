@@ -33,7 +33,6 @@ class Model:
        
         self.name = None
         self.filename = None
-        self.draw_node_id = dpg.generate_uuid()
         self.diagrams: list[Diagram] = [] 
         
     def move(self, delta: Vector):
@@ -132,9 +131,7 @@ class Model:
             dpg.create_translation_matrix(self.pos.asList())
             * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
         )
-        dpg.apply_transform(
-            self.draw_node_id, self.model_matrix
-        )
+
 
     def get_model_matrix(self):
         return self.model_matrix
