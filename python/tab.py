@@ -24,7 +24,7 @@ class Tab:
         self.model.set_scale(self.factor)
         s = self.model.get_nodes()[0]
         e = self.model.get_nodes()[-1]
-        d = e.point - s.point
+        d = e.direction - s.direction
         self.draw_node_id = dpg.generate_uuid()
         
         self.order = ["supports", "elements", "nodes", "loads"]

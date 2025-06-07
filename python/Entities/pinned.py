@@ -14,12 +14,15 @@ from config import config
 class Pinned(Support):
     def __init__(self, id:int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
-                
-        self.transformation = TranslationMatrix(self.node.point)
+        self.dof = 2
+        
+        self.make_ctrlPoints()
+        
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []            
+        self.transformation = TranslationMatrix(self.node.direction)
         self.rotation = RotationMatrix(self.direction.angle())
         self.scale = ScaleMatrix(0.5)
-        
-        self.dof = 2
         
         self.ctrlPoints.append(Point(0, 0))
         self.ctrlPoints.append(Point(-1, 1))
@@ -34,7 +37,6 @@ class Pinned(Support):
             
     def geometry(self):
         self.primitives.clear()
-
         
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("SupportColor")), 5))
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 3, (255, 255, 255), 5))

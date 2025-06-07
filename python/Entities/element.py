@@ -12,6 +12,11 @@ class Element(Object):
         super().__init__(id)
         self.start_node:Node = start_node
         self.end_node:Node = end_node
+        
+        self.make_ctrlPoints()
+                
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
         self.ctrlPoints.append(Point())
         self.ctrlPoints.append(Point(1, 0))
 
@@ -25,8 +30,8 @@ class Element(Object):
         self.primitives.clear()
 
         # Трансляция
-        self.ctrlPoints[0] = self.start_node.point
-        self.ctrlPoints[1] = self.end_node.point
+        self.ctrlPoints[0] = self.start_node.direction
+        self.ctrlPoints[1] = self.end_node.direction
         
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), color=eval(config("LineColor")), thickness=5))
         return self.primitives

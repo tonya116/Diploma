@@ -10,6 +10,8 @@ from Entities.pinned import Pinned
 from Entities.roller import Roller
 from Geometry.Vector import Vector
 from config import config
+from Entities.node import Node
+from Geometry.Point import Point
 from tab import Tab
 from window import Window
 
@@ -30,7 +32,8 @@ class Application:
             "key_down_handler": self.key_down_handler,
             "get_active_tab": self.get_active_tab,
             "update_E": self.update_E,
-            "save_file": self.save_file
+            "save_file": self.save_file,
+            "_update_data" : self._update_data,
         }
         self.tabs: dict = {}
         self.w = Window(self.callbacks)
@@ -270,3 +273,49 @@ class Application:
         
     def save_file(self):
         self.active_tab.model.save_to_file()
+        
+    def _update_data(self, sender, app_data):
+        """Обновление данных при изменении значений"""
+        print(sender)
+        print(app_data)
+        path = sender
+        try:
+            # Находим нужный элемент в структуре данных
+            keys = path.split('.')
+            current = self.active_tab.model.data
+            
+            for key in keys[:-1]:
+                if '[' in key:
+                    # Обработка индексов массивов
+                    base = key.split('[')[0]
+                    idx = int(key.split('[')[1].rstrip(']'))
+                    current = current[base][idx]
+                else:
+                    current = current.__getattribute__(key)
+            
+            # Устанавливаем новое значение
+            last_key = keys[-1]
+            if '[' in last_key:
+                base = last_key.split('[')[0]
+                idx = int(last_key.split('[')[1].rstrip(']'))
+                # current[base][idx] = app_data
+
+            else:
+                if isinstance(current.__getattribute__(last_key), Node):
+                    for node in self.active_tab.model.get_nodes():
+                        if node.id == app_data:
+                            current.__setattr__(last_key, node)
+                            break
+
+                elif isinstance(current.__getattribute__(last_key), (int|  float)):
+                    current.__setattr__(last_key, app_data)
+
+            for k, v in self.active_tab.model.data.items():
+                for i in v:
+                    i.make_ctrlPoints()
+            
+            self.active_tab.update_model()
+            self.active_tab.draw_model()
+        except Exception as e:
+            print(f"Error updating {path}: {e}")
+       

@@ -14,17 +14,21 @@ class NodeModel(BaseModel):
     coordinates: list[float]  # или создайте отдельную модель для Point
 
 class Node(Object):
-    def __init__(self, id: int, point:Point):
+    def __init__(self, id: int, direction:Point):
         super().__init__(id)
-        self.point:Point = point
-        self.ctrlPoints.append(Point())
+        self.direction:Point = direction
+        self.make_ctrlPoints()
         self.interest_points.append(Point())
         
-        self.transformation = TranslationMatrix(self.point)
+
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
+        self.transformation = TranslationMatrix(self.direction)
+        self.ctrlPoints.append(Point())
         self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
 
     def __str__(self):
-        return f"ID: {self.id}, Point: {self.point}"
+        return f"ID: {self.id}, Direction: {self.direction}"
     
     def __repr__(self):
         return self.__str__()
@@ -37,4 +41,4 @@ class Node(Object):
         return self.primitives
 
     def serialize(self):
-        return {"id": self.id, "coordinates": self.point.serialize()}
+        return {"id": self.id, "direction": self.direction.serialize()}

@@ -14,8 +14,12 @@ class Roller(Support):
     def __init__(self, id:int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
         self.dof = 1
+        self.make_ctrlPoints()
+        
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []    
         self.rotation = RotationMatrix(self.direction.angle())
-        self.transformation = TranslationMatrix(self.node.point)
+        self.transformation = TranslationMatrix(self.node.direction)
         self.scale = ScaleMatrix(0.5)
         
         self.ctrlPoints.append(Point())

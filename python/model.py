@@ -24,7 +24,7 @@ from Entities.diagrams import Diagram
 
 class Model:
     def __init__(self):
-
+        self.readOnly = True
         self.pos = Point()
         self.scale = 1
         
@@ -48,9 +48,6 @@ class Model:
         self.filename = filename
         # TODO Надо бы переписать передачу имени файла
         self.name = filename.split("/")[-1][:-4]        
-        # Создаем экземпляр Node
-        point = Point(x=10, y=20)  # предположим, что Point принимает x и y
-        node = Node(id=1, point=point)
         
         # Преобразуем в Pydantic-модель и затем в JSON
         
@@ -68,7 +65,7 @@ class Model:
         loads = []
         supports = []
         for node in data.get("nodes"):
-            nodes.append(Node(node.get("id"), Point(*node.get("coordinates"))))
+            nodes.append(Node(node.get("id"), Point(*node.get("direction"))))
         self.update_data({"nodes": nodes})
 
         for element in data.get("elements"):
@@ -126,7 +123,6 @@ class Model:
             dpg.create_translation_matrix(self.pos.asList())
             * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
         )
-
 
     def get_model_matrix(self):
         return self.model_matrix

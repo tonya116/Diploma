@@ -14,14 +14,18 @@ from .load import Load
 class Momentum(Load):
     def __init__(self, id:int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
+        self.make_ctrlPoints()
 
-        self.ctrlPoints.append(Point(0, 1 * direction.ort().y ))
-        self.ctrlPoints.append(Point(0, -1 *  direction.ort().y ))
-        self.ctrlPoints.append(Point(1, 1 * direction.ort().y ))
-        self.ctrlPoints.append(Point(-1, -1 * direction.ort().y ))
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
+
+        self.ctrlPoints.append(Point(0, 1 * self.direction.ort().y ))
+        self.ctrlPoints.append(Point(0, -1 *  self.direction.ort().y ))
+        self.ctrlPoints.append(Point(1, 1 * self.direction.ort().y ))
+        self.ctrlPoints.append(Point(-1, -1 * self.direction.ort().y ))
 
         self.rotation = RotationMatrix(self.direction.angle())
-        self.transformation = TranslationMatrix(self.node.point)
+        self.transformation = TranslationMatrix(self.node.direction)
         self.scale = ScaleMatrix()
         
         self.ctrlPoints = self.apply_transformation(self.ctrlPoints)

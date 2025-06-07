@@ -10,12 +10,15 @@ from .load import Load
 class Force(Load):
     def __init__(self, id: int, node:Node, direction: Vector):
         super().__init__(id, node, direction)
- 
+        self.make_ctrlPoints()
+
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
         self.ctrlPoints.append(Point())
-        self.ctrlPoints.append(Point(direction.ort().x, -direction.ort().y))
+        self.ctrlPoints.append(Point(self.direction.ort().x, -self.direction.ort().y))
 
         self.rotation = RotationMatrix(self.direction.angle())
-        self.transformation = TranslationMatrix(self.node.point)
+        self.transformation = TranslationMatrix(self.node.direction)
         self.scale = ScaleMatrix()
         
         self.ctrlPoints = self.apply_transformation(self.ctrlPoints)

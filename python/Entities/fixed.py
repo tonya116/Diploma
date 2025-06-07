@@ -14,7 +14,12 @@ class Fixed(Support):
         super().__init__(id, node, direction)
         self.dof = 3
 
-        self.transformation = TranslationMatrix(self.node.point)
+        self.make_ctrlPoints()
+
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
+
+        self.transformation = TranslationMatrix(self.node.direction)
         self.rotation = RotationMatrix(self.direction.angle())
         self.scale = ScaleMatrix(0)
         n = 2

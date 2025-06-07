@@ -11,9 +11,13 @@ from Entities.fixed import Fixed
 from Entities.pinned import Pinned
 from Entities.roller import Roller
 from Entities.force import Force
+from Entities.prop import Support
+from Entities.load import Load
+
 from Entities.distributed_force import DistributedForce
 from Entities.momentum import Momentum
 
+from Geometry.Point import Point
 from tab import Tab
 
 W = int(config("WIDTH"))
@@ -95,21 +99,39 @@ class Window:
                 else:
                     self._add_editable_field(parent, item, new_path)
 
+    def __add_node_field(self, value, path, text = "Node:"):
+        dpg.add_text(text)
+        dpg.add_input_int(
+            default_value=value.node.id,
+            width=150,
+            tag=f"{path}.node",
+            callback=self.callbacks.get("_update_data")
+        )
+
+    def __add_direction_field(self, value: Node| Load| Support, path):
+        dpg.add_text(f"Direction:")
+        with dpg.group(horizontal=True):
+                dpg.add_input_float(
+                    default_value=value.direction.x,
+                    width=150,
+                    tag=f"{path}.direction.x",
+                    callback=self.callbacks.get("_update_data")
+                )
+                dpg.add_input_float(
+                    default_value=value.direction.y,
+                    width=150,
+                    tag=f"{path}.direction.y",
+                    callback=self.callbacks.get("_update_data")
+                )
+
     def _add_editable_field(self, parent: str, value: Any, path: str):
         """Добавление поля с возможностью редактирования"""
         with dpg.group(horizontal=True, parent=parent):
             if isinstance(value, Node):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    self.__add_direction_field(value, path)
 
-                    for i, num in enumerate(value.point.asList()):
-                        dpg.add_input_float(
-                            default_value=num,
-                            tag=f"{path}[{i}]",
-                            width=100,
-                            callback=self._update_data
-                        )
-                        
             elif isinstance(value, Element):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
@@ -118,119 +140,48 @@ class Window:
 
                         dpg.add_input_int(
                             default_value=value.start_node.id,
+                            tag=f"{path}.start_node",
                             width=150,
-                            callback=self._update_data
+                            callback=self.callbacks.get("_update_data")
                         )
                         dpg.add_text(f"End Node:")
 
                         dpg.add_input_int(
                             default_value=value.end_node.id,
-                            tag=f"{path}",
+                            tag=f"{path}.end_node",
                             width=150,
-                            callback=self._update_data
+                            callback=self.callbacks.get("_update_data")
                         )
 
             elif isinstance(value, (Fixed, Roller, Pinned)):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
                     with dpg.group(horizontal=False):
-                        dpg.add_text(f"Node:")
-
-                        dpg.add_input_int(
-                            default_value=value.node.id,
-                            width=150,
-                            callback=self._update_data
-                        )
-                        dpg.add_text(f"Direction:")
-                        with dpg.group(horizontal=True):
-                            for i, num in enumerate(value.direction.asList()):
-                                dpg.add_input_float(
-                                    default_value=num,
-                                    width=150,
-                                    callback=self._update_data
-                                )
+                        self.__add_node_field(value, path)
+                        self.__add_direction_field(value, path)
+                        
             elif isinstance(value, (Force, Momentum)):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
                     with dpg.group(horizontal=False):
-                        dpg.add_text(f"Node:")
+                        self.__add_node_field(value, path)
+                        self.__add_direction_field(value, path)
 
-                        dpg.add_input_int(
-                            default_value=value.node.id,
-                            width=150,
-                            callback=self._update_data
-                        )
-                        dpg.add_text(f"Direction:")
-                        with dpg.group(horizontal=True):
-                            for i, num in enumerate(value.direction.asList()):
-                                dpg.add_input_float(
-                                    default_value=num,
-                                    width=150,
-                                    callback=self._update_data
-                                )
             elif isinstance(value, DistributedForce):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
                     with dpg.group(horizontal=False):
-                        dpg.add_text(f"Node:")
+                        self.__add_node_field(value, path)
+                        self.__add_direction_field(value, path)
 
-                        dpg.add_input_int(
-                            default_value=value.node.id,
-                            width=150,
-                            callback=self._update_data
-                        )
-                        dpg.add_text(f"Direction:")
-                        with dpg.group(horizontal=True):
-                            for i, num in enumerate(value.direction.asList()):
-                                dpg.add_input_float(
-                                    default_value=num,
-                                    width=150,
-                                    callback=self._update_data
-                                )
-                                
                         dpg.add_text(f"Lenght:")
                         dpg.add_input_float(
                             default_value=value.lenght,
                             width=150,
-                            callback=self._update_data
+                            tag=f"{path}.lenght",
+                            callback=self.callbacks.get("_update_data")
                         )
     
-    def _update_data(self, sender, app_data):
-        """Обновление данных при изменении значений"""
-        print(sender)
-        print(app_data)
-        path = sender
-        try:
-            # Находим нужный элемент в структуре данных
-            keys = path.split('.')
-            current = self.app.current_model.data
-            
-            for key in keys[:-1]:
-                if '[' in key:
-                    # Обработка индексов массивов
-                    base = key.split('[')[0]
-                    idx = int(key.split('[')[1].rstrip(']'))
-                    current = current[base][idx]
-                else:
-                    current = current[key]
-            
-            # Устанавливаем новое значение
-            last_key = keys[-1]
-            if '[' in last_key:
-                base = last_key.split('[')[0]
-                idx = int(last_key.split('[')[1].rstrip(']'))
-                current[base][idx] = app_data
-            else:
-                current[last_key] = app_data
-
-        except Exception as e:
-            print(f"Error updating {path}: {e}")
-       
-    def _save_to_file(self, sender, app_data, user_data:str = ""):
-        """Сохранение данных в файл"""
-        print(sender, app_data, user_data)
-        self.current_model.save_to_file(user_data)
-       
     def add_find_loads(self, values):
         dpg.add_text(f"Found reactions", parent="inspector")   
 
@@ -252,7 +203,7 @@ class Window:
             with dpg.group(horizontal=True):
 
                 # Левый блок — Канвас
-                with dpg.child_window(width=W//4*3, height=H):
+                with dpg.child_window(width=W//4*3-100, height=H):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.callbacks.get("tab_change_callback")):
                         pass          
@@ -271,11 +222,11 @@ class Window:
                         pass
                     
         
-        with dpg.handler_registry():
+        # with dpg.handler_registry():
             # dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
-            dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
-            dpg.add_mouse_wheel_handler(callback=self.callbacks.get("mouse_wheel_handler"))
-            dpg.add_key_down_handler(callback=self.callbacks.get("key_down_handler"))
-            dpg.add_key_press_handler(callback=self.callbacks.get("key_down_handler"))
+            # dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
+            # dpg.add_mouse_wheel_handler(callback=self.callbacks.get("mouse_wheel_handler"))
+            # dpg.add_key_down_handler(callback=self.callbacks.get("key_down_handler"))
+            # dpg.add_key_press_handler(callback=self.callbacks.get("key_down_handler"))
         dpg.set_primary_window("main_window", True)
         
