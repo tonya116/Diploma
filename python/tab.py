@@ -26,7 +26,6 @@ class Tab:
         e = self.model.get_nodes()[-1]
         d = e.point - s.point
         self.draw_node_id = dpg.generate_uuid()
-
         
         self.order = ["supports", "elements", "nodes", "loads"]
 
@@ -38,17 +37,22 @@ class Tab:
                     with dpg.draw_node(parent=self.draw_layer_id) as self.draw_node_id:
                         self.draw_model()
 
-    def draw_model(self):
-        # Очищаем предыдущие элементы
-        self.clear_model()
-
-        if not self.model:
-            return
-
+    def update_model(self):
         self.model.update()
+
         dpg.apply_transform(
             self.draw_node_id, self.model.model_matrix
         )
+
+    def draw_model(self):
+
+        if not self.model:
+            return
+        
+        # Очищаем предыдущие элементы
+        self.clear_model()
+        self.model.set_scale(self.factor)
+        self.update_model()
         
         for _, val in self.model.data.items():
             for obj in val:

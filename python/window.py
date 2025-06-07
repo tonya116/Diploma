@@ -19,7 +19,6 @@ from tab import Tab
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
 
-DEFAULT = True
 
 TITLE = "HyprBeam"
 
@@ -38,17 +37,19 @@ class Window:
             # Устанавливаем шрифт по умолчанию для всех элементов
             dpg.bind_font(default_font)
 
+        self.setup()
+
     def mouse_drag_handler(self, sender, app_data, user_data):
         if self.app.active_tab:
             f = Vector(*dpg.get_mouse_pos()) 
             current_pos = self.active_tab.model.get_pos()
             # self.app.current_model.set_pos(f + (f - current_pos))
 
-    def mouse_double_click_handler(self, sender, app_data, user_data):
-        if self.app.active_tab and app_data == dpg.mvMouseButton_Left:
-            mouse_pos = Vector(*dpg.get_drawing_mouse_pos()) - Vector(W//4, H//2)
-            print(f"Mouse position: {mouse_pos}")
-            dpg.draw_circle(mouse_pos.asList(), 5, color=(255, 255, 0), fill=(255, 255, 0), parent=self.app.active_tab.model.draw_node_id)
+    # def mouse_double_click_handler(self, sender, app_data, user_data):
+    #     if self.app.active_tab and app_data == dpg.mvMouseButton_Left:
+    #         mouse_pos = Vector(*dpg.get_drawing_mouse_pos()) - Vector(W//4, H//2)
+    #         print(f"Mouse position: {mouse_pos}")
+    #         dpg.draw_circle(mouse_pos.asList(), 5, color=(255, 255, 0), fill=(255, 255, 0), parent=self.app.active_tab.model.draw_node_id)
 
     def select_open_file_cb(self, sender, app_data, user_data):
         model = Model()
@@ -75,11 +76,13 @@ class Window:
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
         """Рекурсивное построение дерева с элементами редактирования"""
         if isinstance(data, dict):
+            if dpg.does_item_exist(parent):
+                dpg.delete_item(parent, children_only=True)
             for key, value in data.items():
                 new_path = f"{path}.{key}" if path else key
                 if isinstance(value, (dict, list)):
-                    with dpg.tree_node(label=key, parent=parent):
-                        self._build_editable_tree(parent, value, new_path)
+                    with dpg.tree_node(label=key, parent=parent) as tree_node:
+                        self._build_editable_tree(tree_node, value, new_path)
                 else:
                     self._add_editable_field(parent, key, value, new_path)
 
@@ -246,43 +249,32 @@ class Window:
                     dpg.add_menu_item(label="Run", callback=self.callbacks.get("calculate"))
                     
             with dpg.group(horizontal=True):
-                if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
-                    model = Model()
-                    model.load_model(config("DEFAULT_MODEL"))
+
                 # Левый блок — Канвас
                 with dpg.child_window(width=W//2, height=H):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.callbacks.get("tab_change_callback")):
-                        if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
-                            self.callbacks.get("create_tab")(model)
-                        
+                        pass          
+                                  
                 # Правый блок — Инспектор
                 # Inspector()
                 with dpg.child_window(width=W//2, height=H, tag="inspector"):
                     dpg.add_text("Inspector")
+                    
                     dpg.add_text(f"E - модуль упругости (Па)")
-
-                    dpg.add_input_int(tag="E", width=100, callback=self.callback)
+                    dpg.add_input_int(default_value=210, tag="E", width=100, callback=self.callbacks.get("update_E"))
+                    
                     dpg.add_text(f"SIGMA")
-
                     dpg.add_input_int(tag="sigma", width=100, callback=self.callback)
-                    self._build_editable_tree("##dynamic_tree_root", model.data)
+                    with dpg.group(tag="tree") as tree:
+                        pass
+                    
         
         with dpg.handler_registry():
-            dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
+            # dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
             dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
             dpg.add_mouse_wheel_handler(callback=self.callbacks.get("mouse_wheel_handler"))
             dpg.add_key_down_handler(callback=self.callbacks.get("key_down_handler"))
             dpg.add_key_press_handler(callback=self.callbacks.get("key_down_handler"))
         dpg.set_primary_window("main_window", True)
-
-    def run(self):
-        self.setup()
-        dpg.show_viewport()
         
-        while dpg.is_dearpygui_running():
-            # if self.active_tab:
-            #     self.active_tab.model.update()
-
-            dpg.render_dearpygui_frame()
-        dpg.destroy_context()

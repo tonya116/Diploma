@@ -9,8 +9,13 @@ from Entities.momentum import Momentum
 from Entities.pinned import Pinned
 from Entities.roller import Roller
 from Geometry.Vector import Vector
+from config import config
 from tab import Tab
 from window import Window
+
+from dearpygui import dearpygui as dpg
+
+DEFAULT = True
 
 sigma = 180e6
 E = 2e11  # модуль упругости (Па)
@@ -22,18 +27,30 @@ class Application:
             "create_tab": self.create_tab,
             "mouse_wheel_handler": self.mouse_wheel_handler,
             "tab_change_callback": self.tab_change_callback,
-            "key_down_handler": self.key_down_handler
+            "key_down_handler": self.key_down_handler,
+            "get_active_tab": self.get_active_tab,
+            "update_E": self.update_E
         }
+        self.tabs: dict = {}
         self.w = Window(self.callbacks)
         self.calc: Calculations = Calculations()
         self.sortament = Sortament()
-        # self.models: dict = {}
         self.active_tab: Tab = None
-        self.tabs: dict = {}
-        
+        if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
+            model = Model()
+            model.load_model(config("DEFAULT_MODEL"))
+            self.create_tab(model)
+            self.w._build_editable_tree("tree", self.active_tab.model.data)
+
     def run(self):
-        self.w.run()
         
+        dpg.show_viewport()
+        while dpg.is_dearpygui_running():
+            if self.active_tab:
+                self.active_tab.update_model()
+            dpg.render_dearpygui_frame()
+        dpg.destroy_context()
+                
     def calculate(self):
         dsi = self.active_tab.model.dsi
         if dsi < 0:
@@ -42,7 +59,6 @@ class Application:
             print("DSI = 0; Система статически определима")
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
-        
         
         eq_models = [self.active_tab.model.copy() for _ in range(dsi)]
         for em in eq_models:
@@ -77,9 +93,9 @@ class Application:
             M1Mes.append(M1Me)
 
         for i, em in enumerate(eq_models):
-            em.name = f"X{i+1}_diagram"  
-            self.build_diagram(0, em, area[0], area[1], M1Ves[i]) 
-            self.build_diagram(1, em, area[0], area[1], M1Mes[i]) 
+            em.name = f"X{i+1}_diagram"
+            self.build_diagram(0, em, area[0], area[1], M1Ves[i])
+            self.build_diagram(1, em, area[0], area[1], M1Mes[i])
 
             self.create_tab(em)
 
@@ -111,7 +127,7 @@ class Application:
         
 
     def build_diagram(self, type, model: Model, start_node, end_node, diagram):
-        model.diagrams.append(Diagram(1001, type, start_node, end_node, diagram, model))
+        model.diagrams.append(Diagram(1001, type, start_node, end_node, diagram))
 
     def apply_force(self, sup):
         
@@ -215,24 +231,20 @@ class Application:
 
         self.build_diagram(2, model, area[0], area[1], v)
         self.create_tab(model)
-    
-    # def add_model(self, model: Model):
-    #     self.models.update({model.name: model})
         
     def create_tab(self, model:Model):
         tab = Tab(model)
-        self.tabs.update({tab.tab_id:tab})
-        # self.add_model(model)
         self.active_tab = tab
-    
+        self.tabs.update({tab.tab_id:tab})
+
     def mouse_wheel_handler(self, sender, app_data, user_data):
         if self.active_tab:
             self.active_tab.factor *= 1.5 ** app_data
-            self.active_tab.model.set_scale(self.active_tab.factor)
             
     # Функция для проверки активного таба
     def tab_change_callback(self, sender, app_data, user_data):
         self.active_tab = self.tabs.get(app_data)
+        self.w._build_editable_tree("tree", self.active_tab.model.data)
 
     def key_down_handler(self, sender, app_data, user_data):
             if not self.active_tab:
@@ -248,3 +260,9 @@ class Application:
             #     case dpg.mvKey_S:
             #         dx = Vector(-30, 0)
             self.active_tab.model.move(dx)
+            
+    def get_active_tab(self):
+        return self.active_tab
+    
+    def update_E(self, sender, app_data, user_data):
+        E = app_data
