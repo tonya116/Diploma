@@ -60,7 +60,7 @@
                 0,
                 40
             ]
-        },  
+        },
         {
             "id": 2,
             "node": 3,
@@ -70,32 +70,43 @@
                 60
             ]
         }
-        
     ],
     "supports": [
         {
             "id": 1,
             "node": 1,
             "type": "pinned",
-            "direction": [0, 1]
+            "direction": [
+                0,
+                1
+            ]
         },
         {
             "id": 2,
             "node": 2,
             "type": "roller",
-            "direction": [0, 1]
+            "direction": [
+                0,
+                1
+            ]
         },
         {
             "id": 3,
             "node": 4,
             "type": "roller",
-            "direction": [0, 1]
+            "direction": [
+                0,
+                1
+            ]
         },
         {
             "id": 4,
             "node": 6,
             "type": "roller",
-            "direction": [0, 1]
+            "direction": [
+                0,
+                1
+            ]
         }
     ]
 }
