@@ -42,3 +42,5 @@ class Roller(Support):
         
         return self.primitives
     
+    def serialize(self):
+        return {"id": self.id, "node": self.node.id, "type": "roller", "direction": self.direction.serialize()}

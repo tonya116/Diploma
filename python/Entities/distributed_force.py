@@ -45,3 +45,6 @@ class DistributedForce(Load):
 
         return self.primitives
     
+    
+    def serialize(self):
+        return {"id": self.id, "node": self.node.id, "type": "distributed_force", "lenght": self.lenght, "direction": self.direction.serialize()}

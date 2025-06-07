@@ -56,3 +56,5 @@ class Point:
     def asList(self):
         return [self.x, self.y]
     
+    def serialize(self):
+        return self.asList()

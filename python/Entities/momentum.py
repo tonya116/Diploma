@@ -39,3 +39,5 @@ class Momentum(Load):
 
         return self.primitives
     
+    def serialize(self):
+        return {"id": self.id, "node": self.node.id, "type": "momentum", "direction": self.direction.serialize()}

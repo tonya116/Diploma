@@ -62,3 +62,6 @@ class Vector:
         
     def ort(self):
         return Vector(self.x / self.norm(), self.y / self.norm())
+    
+    def serialize(self):
+        return self.asList()

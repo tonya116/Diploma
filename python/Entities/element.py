@@ -16,7 +16,7 @@ class Element(Object):
         self.ctrlPoints.append(Point(1, 0))
 
     def __str__(self):
-        return f"Id: {self.id}, Start node: {self.start_node}, End node: {self.end_node}, Type: {self.type}, Material: {self.material}"
+        return f"Id: {self.id}, Start node: {self.start_node}, End node: {self.end_node}"
 
     def __repr__(self):
         return self.__str__()
@@ -30,3 +30,6 @@ class Element(Object):
         
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), color=eval(config("LineColor")), thickness=5))
         return self.primitives
+
+    def serialize(self):
+        return {"id": self.id, "start_node": self.start_node.id, "end_node": self.end_node.id}

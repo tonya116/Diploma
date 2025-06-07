@@ -29,7 +29,8 @@ class Application:
             "tab_change_callback": self.tab_change_callback,
             "key_down_handler": self.key_down_handler,
             "get_active_tab": self.get_active_tab,
-            "update_E": self.update_E
+            "update_E": self.update_E,
+            "save_file": self.save_file
         }
         self.tabs: dict = {}
         self.w = Window(self.callbacks)
@@ -266,3 +267,6 @@ class Application:
     
     def update_E(self, sender, app_data, user_data):
         E = app_data
+        
+    def save_file(self):
+        self.active_tab.model.save_to_file()

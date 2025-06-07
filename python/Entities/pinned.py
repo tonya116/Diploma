@@ -46,3 +46,5 @@ class Pinned(Support):
         
         return self.primitives
     
+    def serialize(self):
+        return {"id": self.id, "node": self.node.id, "type": "pinned", "direction": self.direction.serialize()}

@@ -35,3 +35,6 @@ class Node(Object):
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("NodeColor")), 5))
 
         return self.primitives
+
+    def serialize(self):
+        return {"id": self.id, "coordinates": self.point.serialize()}

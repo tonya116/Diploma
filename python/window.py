@@ -228,7 +228,8 @@ class Window:
        
     def _save_to_file(self, sender, app_data, user_data:str = ""):
         """Сохранение данных в файл"""
-        self.app.current_model.save_to_file(user_data)
+        print(sender, app_data, user_data)
+        self.current_model.save_to_file(user_data)
        
     def add_find_loads(self, values):
         dpg.add_text(f"Found reactions", parent="inspector")   
@@ -242,8 +243,8 @@ class Window:
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Open", callback=self._create_file_dialog)
-                    dpg.add_menu_item(label="Save", callback=self._save_to_file)
-                    dpg.add_menu_item(label="Save As", callback=self._save_to_file)
+                    dpg.add_menu_item(label="Save", callback=self.callbacks.get("save_file"))
+                    # dpg.add_menu_item(label="Save As", callback=self._save_to_file)
 
                 with dpg.menu(label="Calculate"):
                     dpg.add_menu_item(label="Run", callback=self.callbacks.get("calculate"))
@@ -251,14 +252,14 @@ class Window:
             with dpg.group(horizontal=True):
 
                 # Левый блок — Канвас
-                with dpg.child_window(width=W//2, height=H):
+                with dpg.child_window(width=W//4*3, height=H):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.callbacks.get("tab_change_callback")):
                         pass          
                                   
                 # Правый блок — Инспектор
                 # Inspector()
-                with dpg.child_window(width=W//2, height=H, tag="inspector"):
+                with dpg.child_window(width=W//4, height=H, tag="inspector"):
                     dpg.add_text("Inspector")
                     
                     dpg.add_text(f"E - модуль упругости (Па)")

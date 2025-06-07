@@ -113,18 +113,13 @@ class Model:
     def update_data(self, data):
         self.data.update(data)   
                               
-    def save_to_file(self, filename:str):
-        print(filename)
-        if not filename:
+    def save_to_file(self):
+        if self.filename:
             with open(self.filename, "w") as f:
-                json.dump(self.data, f, default=__dict__, indent=5)
-            print(f"Write model to {self.filename}")
-
+                print(f"Write model to {self.filename}")
+                f.write(json.dumps(self.serialize()))
         else:
-            with open(filename, "w") as f:
-                json.dump(self.data, f, indent=4)
-            print(f"Write model to {filename}")
-        
+            raise Exception("Filename not specify for this model")
     def update(self):
         self.model_matrix = (
             
@@ -151,3 +146,11 @@ class Model:
         tmp.dsi = self.dsi
         return tmp
     
+    def serialize(self):
+        d = {}
+        for k, v in self.data.items():
+            t = []
+            for i in v:
+                t.append(i.serialize())
+            d.update({k: t})
+        return d

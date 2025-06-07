@@ -33,3 +33,5 @@ class Fixed(Support):
         
         return self.primitives
     
+    def serialize(self):
+        return {"id": self.id, "node": self.node.id, "type": "fixed", "direction": self.direction.serialize()}

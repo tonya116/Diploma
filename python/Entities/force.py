@@ -30,3 +30,5 @@ class Force(Load):
 
         return self.primitives
     
+    def serialize(self):
+        return {"id": self.id, "node": self.node.id, "type": "force", "direction": self.direction.serialize()}
