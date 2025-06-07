@@ -93,7 +93,7 @@ class Calculations:
         
         start_node = nodes[0]
         end_node = nodes[-1]
-        lenght = (end_node.point - start_node.point).norm()  # длина балки, м
+        lenght = (end_node.direction - start_node.direction).norm()  # длина балки, м
         x = np.arange(0, lenght + float(config("DX")), float(config("DX")))
         # --- Нагрузки ---
         point_loads = [] # (позиция, сила в кН)
@@ -102,11 +102,11 @@ class Calculations:
 
         for load in model.data.get("loads"):
             if isinstance(load, DistributedForce):
-                distributed_loads.append([load.node.point.x - load.lenght/2, load.node.point.x + load.lenght/2, load.direction.y])
+                distributed_loads.append([load.node.direction.x - load.lenght/2, load.node.direction.x + load.lenght/2, load.direction.y])
             if isinstance(load, Force):
-                point_loads.append([load.node.point.x, load.direction.y])
+                point_loads.append([load.node.direction.x, load.direction.y])
             if isinstance(load, Momentum):
-                moments.append([load.node.point.x, load.direction.y])
+                moments.append([load.node.direction.x, load.direction.y])
 
         point_loadsM = self.create_matrix(point_loads)
         distributed_loadsM = self.create_matrix(distributed_loads)
@@ -117,7 +117,7 @@ class Calculations:
         M = np.zeros(x.size, dtype=np.float64)
         
         # Вызываем функцию
-        self.lib.diagram_calc(x, sup1.node.point.x, sup2.node.point.x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
+        self.lib.diagram_calc(x, sup1.node.direction.x, sup2.node.direction.x, x.size, V, M, point_loadsM, distributed_loadsM, momentsM)
 
         self.lib.Matrix_destroy(point_loadsM)
         self.lib.Matrix_destroy(distributed_loadsM)

@@ -24,7 +24,7 @@ from Entities.diagrams import Diagram
 
 class Model:
     def __init__(self):
-
+        self.readOnly = True
         self.pos = Point()
         self.scale = 1
         
@@ -33,7 +33,6 @@ class Model:
        
         self.name = None
         self.filename = None
-        self.draw_node_id = dpg.generate_uuid()
         self.diagrams: list[Diagram] = [] 
         
     def move(self, delta: Vector):
@@ -49,12 +48,8 @@ class Model:
         self.filename = filename
         # TODO Надо бы переписать передачу имени файла
         self.name = filename.split("/")[-1][:-4]        
-        # Создаем экземпляр Node
-        point = Point(x=10, y=20)  # предположим, что Point принимает x и y
-        node = Node(id=1, point=point)
         
         # Преобразуем в Pydantic-модель и затем в JSON
-        node_model = node.to_pydantic()
         
         with open(filename, "r", encoding="utf-8-sig") as file:
             data = json.load(file)
@@ -70,7 +65,7 @@ class Model:
         loads = []
         supports = []
         for node in data.get("nodes"):
-            nodes.append(Node(node.get("id"), Point(*node.get("coordinates"))))
+            nodes.append(Node(node.get("id"), Point(*node.get("direction"))))
         self.update_data({"nodes": nodes})
 
         for element in data.get("elements"):
@@ -78,26 +73,28 @@ class Model:
                 Element(
                     element.get("id"),
                     self.data.get("nodes")[element.get("start_node") - 1],
-                    self.data.get("nodes")[element.get("end_node") - 1],
+                    self.data.get("nodes")[element.get("end_node") - 1]
             ))
         self.update_data({"elements": elements})
 
         for load in data.get("loads"):
-            if load.get("type") == "force":
-                loads.append(Force(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction"))))
-            elif load.get("type") == "distributed_force":
-                loads.append(DistributedForce(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
-            elif load.get("type") == "momentum":
-                loads.append(Momentum(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("momentum"))))
+            match load.get("type"):
+                case "force":
+                    loads.append(Force(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction"))))
+                case "distributed_force":
+                    loads.append(DistributedForce(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction")), load.get("lenght")))
+                case "momentum":
+                    loads.append(Momentum(load.get("id"), nodes[load.get("node")-1], Vector(*load.get("direction"))))
         self.update_data({"loads": loads})
 
         for support in data.get("supports"):
-            if support.get("type") == "fixed":
-                supports.append(Fixed(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
-            elif support.get("type") == "pinned":
-                supports.append(Pinned(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
-            elif support.get("type") == "roller":
-                supports.append(Roller(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+            match support.get("type"):
+                case "fixed":
+                    supports.append(Fixed(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+                case "pinned":
+                    supports.append(Pinned(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
+                case "roller":
+                    supports.append(Roller(support.get("id"), nodes[support.get("node")-1], Vector(*support.get("direction"))))
                 
         self.update_data({"supports": supports})
         
@@ -113,26 +110,18 @@ class Model:
     def update_data(self, data):
         self.data.update(data)   
                               
-    def save_to_file(self, filename:str):
-        print(filename)
-        if not filename:
+    def save_to_file(self):
+        if self.filename:
             with open(self.filename, "w") as f:
-                json.dump(self.data, f, default=__dict__, indent=5)
-            print(f"Write model to {self.filename}")
-
+                print(f"Write model to {self.filename}")
+                f.write(json.dumps(self.serialize()))
         else:
-            with open(filename, "w") as f:
-                json.dump(self.data, f, indent=4)
-            print(f"Write model to {filename}")
-        
+            raise Exception("Filename not specify for this model")
     def update(self):
         self.model_matrix = (
             
             dpg.create_translation_matrix(self.pos.asList())
             * dpg.create_scale_matrix([self.scale, self.scale, self.scale]) 
-        )
-        dpg.apply_transform(
-            self.draw_node_id, self.model_matrix
         )
 
     def get_model_matrix(self):
@@ -153,3 +142,11 @@ class Model:
         tmp.dsi = self.dsi
         return tmp
     
+    def serialize(self):
+        d = {}
+        for k, v in self.data.items():
+            t = []
+            for i in v:
+                t.append(i.serialize())
+            d.update({k: t})
+        return d

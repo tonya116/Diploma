@@ -11,10 +11,13 @@ from .load import Load
 class DistributedForce(Load):
     def __init__(self, id:int, node:Node, direction: Vector, lenght: float):
         super().__init__(id, node, direction)
-
         self.lenght = lenght
         
-        self.transformation = TranslationMatrix(self.node.point)
+        self.make_ctrlPoints()
+        
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
+        self.transformation = TranslationMatrix(self.node.direction)
         self.rotation = RotationMatrix(self.direction.angle())
         self.scale = ScaleMatrix()
 
@@ -26,21 +29,16 @@ class DistributedForce(Load):
         for i in range(-n//2, n//2+1):
             self.ctrlPoints.append(Point(i * step, 0))
             self.ctrlPoints.append(Point(i * step, -2))
-            
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
+
     def __str__(self):
         return f"DF: {self.node}, Direction: {self.direction}, Lenght: {self.lenght}, Force: {self.force}"
 
     def __repr__(self):
         return self.__str__()
-
-         
-    def __dict__(self):
-        return {"lenght": self.lenght}
     
     def geometry(self):
         self.primitives.clear()
-
-        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
 
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))
 
@@ -49,5 +47,6 @@ class DistributedForce(Load):
 
         return self.primitives
     
-    def __deepcopy__(self, _):
-        return DistributedForce(self.id, self.node, self.direction, self.lenght)
+    
+    def serialize(self):
+        return {"id": self.id, "node": self.node.id, "type": "distributed_force", "lenght": self.lenght, "direction": self.direction.serialize()}

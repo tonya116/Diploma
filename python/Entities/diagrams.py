@@ -10,13 +10,12 @@ from Geometry.Point import Point
 from config import config
 
 class Diagram(Object):
-    def __init__(self, id: int, type: str, start_node: Node, end_node: Node, diagram: list[float], model):
+    def __init__(self, id: int, type: str, start_node: Node, end_node: Node, diagram: list[float]):
         super().__init__(id)
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
         self.diagram = list(diagram)
-        self.model = model
         self.factor = 10
         
         match(self.type):
@@ -38,7 +37,6 @@ class Diagram(Object):
     def geometry(self):
         self.primitives.clear()
         dx = float(config("DX"))
-        
 
         for point in self.interest_points:
             
@@ -60,6 +58,3 @@ class Diagram(Object):
                     )
             
         return self.primitives
-
-    def __deepcopy__(self, l):
-        return Diagram(self.id, self.type, self.start_node, self.end_node, self.diagram.copy(), self.model)

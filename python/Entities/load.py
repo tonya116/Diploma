@@ -20,9 +20,3 @@ class Load(Object):
 
     def __repr__(self):
         return self.__str__()
-         
-    def __dict__(self):
-        return {"node": self.node.id, "direction": self.direction.__dict__}
-
-    def __deepcopy__(self, _):
-        return Load(self.id, self.node, self.direction)

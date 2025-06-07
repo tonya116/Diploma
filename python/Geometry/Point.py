@@ -4,9 +4,6 @@ class Point:
     def __init__(self, x = 0, y = 0):
         self.x = x
         self.y = y
-        
-    def __dict__(self):
-        return [self.x, self.y]
     
     def __add__(self, other: Vector):
         tmp = Point(self.x, self.y)
@@ -59,5 +56,5 @@ class Point:
     def asList(self):
         return [self.x, self.y]
     
-    def __deepcopy__(self, _):
-        return Point(self.x, self.y)
+    def serialize(self):
+        return self.asList()

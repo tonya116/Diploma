@@ -12,27 +12,29 @@ class Element(Object):
         super().__init__(id)
         self.start_node:Node = start_node
         self.end_node:Node = end_node
+        
+        self.make_ctrlPoints()
+                
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
         self.ctrlPoints.append(Point())
         self.ctrlPoints.append(Point(1, 0))
 
     def __str__(self):
-        return f"Id: {self.id}, Start node: {self.start_node}, End node: {self.end_node}, Type: {self.type}, Material: {self.material}"
+        return f"Id: {self.id}, Start node: {self.start_node}, End node: {self.end_node}"
 
     def __repr__(self):
         return self.__str__()
-         
-    def __dict__(self):
-        return {"start_node": self.start_node.id, "end_node": self.end_node.id, "type": self.type, "material": self.material}
-    
+
     def geometry(self):
         self.primitives.clear()
 
         # Трансляция
-        self.ctrlPoints[0] = self.start_node.point
-        self.ctrlPoints[1] = self.end_node.point
+        self.ctrlPoints[0] = self.start_node.direction
+        self.ctrlPoints[1] = self.end_node.direction
         
         self.primitives.append(Line(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), color=eval(config("LineColor")), thickness=5))
         return self.primitives
-    
-    def __deepcopy__(self, _):
-        return Element(self.id, self.start_node, self.end_node)
+
+    def serialize(self):
+        return {"id": self.id, "start_node": self.start_node.id, "end_node": self.end_node.id}

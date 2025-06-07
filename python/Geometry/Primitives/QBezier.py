@@ -18,5 +18,3 @@ class QBezier(Entity):
         self.p2 = self.p1 + offset1
         self.p3 = self.p2 + offset2
         
-    def __deepcopy__(self, _):
-        return QBezier(self.p1, self.p2, self.p3, self.radius, self.color, self.thickness)

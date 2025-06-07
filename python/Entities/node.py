@@ -14,39 +14,31 @@ class NodeModel(BaseModel):
     coordinates: list[float]  # или создайте отдельную модель для Point
 
 class Node(Object):
-    def __init__(self, id, point:Point):
+    def __init__(self, id: int, direction:Point):
         super().__init__(id)
-        self.point:Point = point
-        self.ctrlPoints.append(Point())
+        self.direction:Point = direction
+        self.make_ctrlPoints()
         self.interest_points.append(Point())
         
-        self.transformation = TranslationMatrix(self.point)
+
+    def make_ctrlPoints(self):
+        self.ctrlPoints = []
+        self.transformation = TranslationMatrix(self.direction)
+        self.ctrlPoints.append(Point())
+        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
 
     def __str__(self):
-        return f"ID: {self.id}, Point: {self.point}"
+        return f"ID: {self.id}, Direction: {self.direction}"
     
     def __repr__(self):
         return self.__str__()
     
-    def __dict__(self):
-        return {"id": self.id, "coordinates": self.point.__dict__()}
-    
     def geometry(self):
         self.primitives.clear()
-        self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
         
         self.primitives.append(Circle(self.ctrlPoints[0].asList(), 5, eval(config("NodeColor")), 5))
 
         return self.primitives
-    
-    def to_pydantic(self) -> 'NodeModel':
-        return NodeModel(**self.__dict__())
-    
-    @classmethod
-    def from_pydantic(cls, node_model: 'NodeModel'):
-        # Предполагая, что Point может быть создан из словаря coordinates
-        point = Point(*node_model.coordinates)
-        return cls(node_model.id, point)
 
-    def __deepcopy__(self, _):
-        return Node(self.id, self.point)
+    def serialize(self):
+        return {"id": self.id, "direction": self.direction.serialize()}

@@ -1,5 +1,5 @@
-﻿from window import Window
+﻿from application import Application
 
 if __name__ == "__main__":
-    w = Window()
-    w.run()
+    app = Application()
+    app.run()
