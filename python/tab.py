@@ -16,7 +16,7 @@ H = int(config("HEIGHT"))
 class Tab:
     far = 1000
     def __init__(self, model: Model):
-        self.factor = 30
+        self.factor = 50
         self.model = model
         self.grid = []
         self.drawlist_id = None
@@ -25,19 +25,23 @@ class Tab:
         s = self.model.get_nodes()[0]
         e = self.model.get_nodes()[-1]
         d = e.direction - s.direction
-        self.draw_node_id = dpg.generate_uuid()
         
         self.order = ["supports", "elements", "nodes", "loads"]
 
         self.model.set_pos(Vector(W//4 - d.norm()/2*self.factor, H//2))
         # Создаем вкладку и все дочерние элементы
-        with dpg.tab(label=self.model.name, parent="tab_bar") as self.tab_id:
+        with dpg.tab(label=self.model.name, parent="tab_bar", closable=True) as self.tab_id:
             with dpg.drawlist(width=W, height=H, parent=self.tab_id) as self.drawlist_id:
                 with dpg.draw_layer(parent=self.drawlist_id) as self.draw_layer_id:
                     with dpg.draw_node(parent=self.draw_layer_id) as self.draw_node_id:
                         self.draw_model()
 
+    def f(self, s, a, u):
+        print(s, a, u)
+
     def update_model(self):
+        self.model.set_scale(self.factor)
+
         self.model.update()
 
         dpg.apply_transform(

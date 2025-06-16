@@ -34,12 +34,20 @@ class Window:
         dpg.create_viewport(title=TITLE, width=W, height=H)
         dpg.setup_dearpygui()
 
-        # Регистрируем шрифт
         with dpg.font_registry():
-            # Первый параметр - размер, второй - путь к файлу шрифта
-            default_font = dpg.add_font(config("FONT"), int(config("FONT_SIZE")), tag="rus_font")
-            # Устанавливаем шрифт по умолчанию для всех элементов
-            dpg.bind_font(default_font)
+
+            with dpg.font(config("FONT"), 18) as default_font:
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
+        dpg.bind_font(default_font)
+
+            
+        # # Регистрируем шрифт
+        # with dpg.font_registry():
+        #     # Первый параметр - размер, второй - путь к файлу шрифта
+        #     default_font = dpg.add_font(config("FONT"), int(config("FONT_SIZE")), tag="rus_font")
+        #     # Устанавливаем шрифт по умолчанию для всех элементов
+        #     dpg.bind_font(default_font)
 
         self.setup()
 
@@ -56,7 +64,7 @@ class Window:
     #         dpg.draw_circle(mouse_pos.asList(), 5, color=(255, 255, 0), fill=(255, 255, 0), parent=self.app.active_tab.model.draw_node_id)
 
     def select_open_file_cb(self, sender, app_data, user_data):
-        model = Model()
+        model = Model(False)
         model.load_model(app_data.get("file_path_name"))
         self.callbacks.get("create_tab")(model)
         
@@ -66,18 +74,19 @@ class Window:
         print("App Data: ", app_data)
         print("User Data: ", user_data)
 
-    def _create_file_dialog(self):
+    def _create_file_dialog(self, sender, app_data, user_data):
         with dpg.file_dialog(
             directory_selector=False,
-            callback=self.select_open_file_cb,
+            callback=user_data,
             id="file_dialog_id",
             width=700,
             height=400,
         ):
             dpg.add_file_extension(".mdl", color=(255, 0, 255), custom_text="[model]")
 
-
     def _build_editable_tree(self, parent: str, data: Any, path: str = ""):
+        name_map = {"nodes": "Узлы", "supports": "Опоры", "loads": "Нагрузки", "elements": "Балки"}
+        
         """Рекурсивное построение дерева с элементами редактирования"""
         if isinstance(data, dict):
             if dpg.does_item_exist(parent):
@@ -85,7 +94,7 @@ class Window:
             for key, value in data.items():
                 new_path = f"{path}.{key}" if path else key
                 if isinstance(value, (dict, list)):
-                    with dpg.tree_node(label=key, parent=parent) as tree_node:
+                    with dpg.tree_node(label=name_map[key], parent=parent) as tree_node:
                         self._build_editable_tree(tree_node, value, new_path)
                 else:
                     self._add_editable_field(parent, key, value, new_path)
@@ -99,133 +108,144 @@ class Window:
                 else:
                     self._add_editable_field(parent, item, new_path)
 
-    def __add_node_field(self, value, path, text = "Node:"):
+    def __add_node_field(self, value, path, text = "Узел:"):
         dpg.add_text(text)
         dpg.add_input_int(
+            label="#Узла",
             default_value=value.node.id,
-            width=150,
+            width=int(config("FieldWidth")),
             tag=f"{path}.node",
             callback=self.callbacks.get("_update_data")
         )
 
-    def __add_direction_field(self, value: Node| Load| Support, path):
-        dpg.add_text(f"Direction:")
+    def __add_direction_field(self, value: Node| Load| Support, path, x = "м", y = "м"):
+        dpg.add_text(f"Направление:")
         with dpg.group(horizontal=True):
                 dpg.add_input_float(
+                    label=x,
                     default_value=value.direction.x,
-                    width=150,
+                    width=int(config("FieldWidth")),
                     tag=f"{path}.direction.x",
                     callback=self.callbacks.get("_update_data")
                 )
                 dpg.add_input_float(
+                    label=y,
                     default_value=value.direction.y,
-                    width=150,
+                    width=int(config("FieldWidth")),
                     tag=f"{path}.direction.y",
                     callback=self.callbacks.get("_update_data")
                 )
 
     def _add_editable_field(self, parent: str, value: Any, path: str):
+        name_map = {"Node": "Узел", "Fixed": "Заделка", "Roller": "Шарнирно-подвижная", "Pinned": "Шарнирно-неподвижная", "element": "Балка", "Momentum": "Момент", "DistributedForce": "Распределенная нагрузка", "Force": "Сосредоточенная сила"}
+
         """Добавление поля с возможностью редактирования"""
         with dpg.group(horizontal=True, parent=parent):
             if isinstance(value, Node):
                 with dpg.group(horizontal=True):
-                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    dpg.add_text(f"{name_map[value.__class__.__name__]} #{value.id}:")
                     self.__add_direction_field(value, path)
 
             elif isinstance(value, Element):
                 with dpg.group(horizontal=True):
-                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    dpg.add_text(f"Балка #{value.id}:")
                     with dpg.group(horizontal=False):
-                        dpg.add_text(f"Start Node:")
+                        dpg.add_text(f"Начальный узел:")
 
                         dpg.add_input_int(
+                            label="#Узла",
                             default_value=value.start_node.id,
                             tag=f"{path}.start_node",
-                            width=150,
+                            width=int(config("FieldWidth")),
                             callback=self.callbacks.get("_update_data")
                         )
-                        dpg.add_text(f"End Node:")
+                        dpg.add_text(f"Конечный узел:")
 
                         dpg.add_input_int(
+                            label="#Узла",
                             default_value=value.end_node.id,
                             tag=f"{path}.end_node",
-                            width=150,
+                            width=int(config("FieldWidth")),
                             callback=self.callbacks.get("_update_data")
                         )
 
             elif isinstance(value, (Fixed, Roller, Pinned)):
                 with dpg.group(horizontal=True):
-                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    dpg.add_text(f"{name_map[value.__class__.__name__]} #{value.id}:")
                     with dpg.group(horizontal=False):
                         self.__add_node_field(value, path)
                         self.__add_direction_field(value, path)
                         
             elif isinstance(value, (Force, Momentum)):
                 with dpg.group(horizontal=True):
-                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    dpg.add_text(f"{name_map[value.__class__.__name__]} #{value.id}:")
                     with dpg.group(horizontal=False):
                         self.__add_node_field(value, path)
-                        self.__add_direction_field(value, path)
+                        self.__add_direction_field(value, path, "кН*м(x)", "кН*м(y)")
 
             elif isinstance(value, DistributedForce):
                 with dpg.group(horizontal=True):
-                    dpg.add_text(f"{value.__class__.__name__} #{value.id}:")
+                    dpg.add_text(f"{name_map[value.__class__.__name__]} #{value.id}:")
                     with dpg.group(horizontal=False):
                         self.__add_node_field(value, path)
-                        self.__add_direction_field(value, path)
+                        self.__add_direction_field(value, path, "кН/м(x)", "кН/м(y)")
 
-                        dpg.add_text(f"Lenght:")
+                        dpg.add_text(f"Протяженность:")
                         dpg.add_input_float(
+                            label="м",
                             default_value=value.lenght,
-                            width=150,
+                            width=int(config("FieldWidth")),
                             tag=f"{path}.lenght",
                             callback=self.callbacks.get("_update_data")
                         )
     
     def add_find_loads(self, values):
-        dpg.add_text(f"Found reactions", parent="inspector")   
+        dpg.add_text(f"Найденные реакции", parent="inspector")   
 
         for i, x in enumerate(values):
-            dpg.add_text(f"X{i+1}: {x:.5} KH", parent="inspector")   
+            dpg.add_text(f"X{i+1}: {x:.5} кH", parent="inspector")   
        
     def setup(self):
         # Основное окно
-        with dpg.window(label="Build v0.0.13", tag="main_window", width=W, height=H):
+        with dpg.window(label="Build v0.0.13", tag="main_window", width=W, height=H, no_scroll_with_mouse=True):
             with dpg.menu_bar():
-                with dpg.menu(label="File"):
-                    dpg.add_menu_item(label="Open", callback=self._create_file_dialog)
-                    dpg.add_menu_item(label="Save", callback=self.callbacks.get("save_file"))
-                    # dpg.add_menu_item(label="Save As", callback=self._save_to_file)
+                with dpg.menu(label="Файл"):
+                    dpg.add_menu_item(label="Открыть", callback=self._create_file_dialog, user_data=self.select_open_file_cb)
+                    dpg.add_menu_item(label="Сохранить", callback=self.callbacks.get("save_file"))
+                    dpg.add_menu_item(label="Сохранить как", callback=self._create_file_dialog, user_data=self.callbacks.get("save_as_file"))
 
-                with dpg.menu(label="Calculate"):
-                    dpg.add_menu_item(label="Run", callback=self.callbacks.get("calculate"))
+                with dpg.menu(label="Расчет"):
+                    dpg.add_menu_item(label="Запуск", callback=self.callbacks.get("calculate"))
                     
             with dpg.group(horizontal=True):
+     
 
                 # Левый блок — Канвас
-                with dpg.child_window(width=W//4*3-100, height=H):
+                with dpg.child_window(width=W//4*3-190, height=H, no_scroll_with_mouse=True):
                     # Вкладки для переключения моделей
                     with dpg.tab_bar(tag="tab_bar", callback=self.callbacks.get("tab_change_callback")):
                         pass          
                                   
                 # Правый блок — Инспектор
                 # Inspector()
-                with dpg.child_window(width=W//4, height=H, tag="inspector"):
-                    dpg.add_text("Inspector")
+                with dpg.child_window(width=W//4+150, height=H, tag="inspector"):
+                    dpg.add_text("Инспектор")
                     
-                    dpg.add_text(f"E - модуль упругости (Па)")
-                    dpg.add_input_int(default_value=210, tag="E", width=100, callback=self.callbacks.get("update_E"))
+                    dpg.add_text(f"Модуль продольной упругости:")
+                    dpg.add_input_text(label="(Па)", default_value=2e11, tag="E", width=200, callback=self.callbacks.get("update_E"))
                     
-                    dpg.add_text(f"SIGMA")
-                    dpg.add_input_int(tag="sigma", width=100, callback=self.callback)
+                    dpg.add_text(f"Допускаемое нормальное напряжение:")
+                    dpg.add_input_int(default_value=180e6, tag="sigma", width=200, callback=self.callback)
                     with dpg.group(tag="tree") as tree:
                         pass
                     
         
-        # with dpg.handler_registry():
+        with dpg.handler_registry():
+            # dpg.add_item_clicked_handler(button=dpg.mvMouseButton_Middle, callback=self.callback)
+            dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Middle, callback=self.callbacks.get("tab_change_callback"))
             # dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
             # dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
-            # dpg.add_mouse_wheel_handler(callback=self.callbacks.get("mouse_wheel_handler"))
+            dpg.add_mouse_wheel_handler(callback=self.callbacks.get("mouse_wheel_handler"))
             # dpg.add_key_down_handler(callback=self.callbacks.get("key_down_handler"))
             # dpg.add_key_press_handler(callback=self.callbacks.get("key_down_handler"))
         dpg.set_primary_window("main_window", True)

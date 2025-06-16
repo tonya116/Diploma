@@ -2,35 +2,35 @@
     "nodes": [
         {
             "id": 1,
-            "coordinates": [
+            "direction": [
                 0,
                 0
             ]
         },
         {
             "id": 2,
-            "coordinates": [
+            "direction": [
                 1,
                 0
             ]
         },
         {
             "id": 3,
-            "coordinates": [
+            "direction": [
                 2,
                 0
             ]
         },
         {
             "id": 4,
-            "coordinates": [
+            "direction": [
                 3,
                 0
             ]
         },
         {
             "id": 5,
-            "coordinates": [
+            "direction": [
                 4,
                 0
             ]
@@ -40,38 +40,24 @@
         {
             "id": 1,
             "start_node": 1,
-            "end_node": 2,
-            "type": "beam",
-            "material": "steel"
+            "end_node": 2
         },
         {
             "id": 2,
             "start_node": 2,
-            "end_node": 3,
-            "type": "beam",
-            "material": "steel"
+            "end_node": 3
         },
         {
             "id": 3,
             "start_node": 3,
-            "end_node": 4,
-            "type": "beam",
-            "material": "steel"
+            "end_node": 4
         },
         {
             "id": 4,
             "start_node": 4,
-            "end_node": 5,
-            "type": "beam",
-            "material": "steel"
+            "end_node": 5
         }
     ],
-    "materials": {
-        "steel": {
-            "modulus": 210e9,
-            "density": 7800
-        }
-    },
     "loads": [
         {
             "id": 1,

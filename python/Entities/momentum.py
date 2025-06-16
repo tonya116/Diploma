@@ -19,10 +19,10 @@ class Momentum(Load):
     def make_ctrlPoints(self):
         self.ctrlPoints = []
 
-        self.ctrlPoints.append(Point(0, 1 * self.direction.ort().y ))
-        self.ctrlPoints.append(Point(0, -1 *  self.direction.ort().y ))
-        self.ctrlPoints.append(Point(1, 1 * self.direction.ort().y ))
-        self.ctrlPoints.append(Point(-1, -1 * self.direction.ort().y ))
+        self.ctrlPoints.append(Point(0, -1 * self.direction.ort().y ))
+        self.ctrlPoints.append(Point(0, 1 *  self.direction.ort().y ))
+        self.ctrlPoints.append(Point(1, -1 * self.direction.ort().y ))
+        self.ctrlPoints.append(Point(-1, 1 * self.direction.ort().y ))
 
         self.rotation = RotationMatrix(self.direction.angle())
         self.transformation = TranslationMatrix(self.node.direction)

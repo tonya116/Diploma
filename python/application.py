@@ -11,7 +11,6 @@ from Entities.roller import Roller
 from Geometry.Vector import Vector
 from config import config
 from Entities.node import Node
-from Geometry.Point import Point
 from tab import Tab
 from window import Window
 
@@ -33,6 +32,7 @@ class Application:
             "get_active_tab": self.get_active_tab,
             "update_E": self.update_E,
             "save_file": self.save_file,
+            "save_as_file": self.save_as_file,
             "_update_data" : self._update_data,
         }
         self.tabs: dict = {}
@@ -41,7 +41,7 @@ class Application:
         self.sortament = Sortament()
         self.active_tab: Tab = None
         if DEFAULT: # исключительно в тестовых целях (открывает файл при запуске)
-            model = Model()
+            model = Model(False)
             model.load_model(config("DEFAULT_MODEL"))
             self.create_tab(model)
             self.w._build_editable_tree("tree", self.active_tab.model.data)
@@ -54,8 +54,11 @@ class Application:
                 self.active_tab.update_model()
             dpg.render_dearpygui_frame()
         dpg.destroy_context()
-                
+        
     def calculate(self):
+        if self.active_tab.model.readOnly:
+            raise Exception("ReadOnly model")
+        
         dsi = self.active_tab.model.dsi
         if dsi < 0:
             raise Exception("DSI < 0; Конструкция является механизмом")
@@ -64,7 +67,7 @@ class Application:
         else:
             print("DSI > 0; Система статически неопределима. Переходим к О.С.")
         
-        eq_models = [self.active_tab.model.copy() for _ in range(dsi)]
+        eq_models = [self.active_tab.model.copy(True) for _ in range(dsi)]
         for em in eq_models:
             em.get_loads().clear()
 
@@ -73,8 +76,8 @@ class Application:
         for i, em in enumerate(eq_models):
             em.get_loads().append(forces[i])
         
-        base_model = self.active_tab.model.copy()
-        base_model.name += "_diagram"
+        base_model = self.active_tab.model.copy(True)
+        base_model.name += " Эпюры Q и M от внешних"
         base_model.update_data({"supports": sups})
         
         for em in eq_models:
@@ -97,14 +100,14 @@ class Application:
             M1Mes.append(M1Me)
 
         for i, em in enumerate(eq_models):
-            em.name = f"X{i+1}_diagram"
+            em.name = f"X{i+1}_эпюра"
             self.build_diagram(0, em, area[0], area[1], M1Ves[i])
             self.build_diagram(1, em, area[0], area[1], M1Mes[i])
 
             self.create_tab(em)
 
         A, B = self.calc.Mores_integral(len(M1Mes[0]) if M1Mes else 0, M1Mes, M1Mb)
-        X = self.calc.solve(A, B*-1)
+        X = self.calc.solve(A, B)
         
         print("Матрица деформаций: \n", A)
         print("Матрица деформаций от внешних нагрузок: \n", B)
@@ -112,11 +115,11 @@ class Application:
         
         self.w.add_find_loads(X)
         
-        result_model = base_model.copy()
+        result_model = base_model.copy(False)
         for i, em in enumerate(eq_models):
-            result_model.get_loads().append(Force(-100, em.data.get("loads")[0].node, Vector(0, X[i])))
+            result_model.get_loads().append(Force(-100, em.data.get("loads")[0].node, Vector(0, -X[i] if X[i] >= 0 else X[i])))
             
-        result_model.name = "result_diagram"
+        result_model.name = "Итоговые эпюры Q и M"
         
         res_A, res_B = self.calc.calc(result_model, sups[0], sups[1])
         
@@ -125,7 +128,7 @@ class Application:
 
         self.create_tab(result_model)
         
-        bending_model = result_model.copy()
+        bending_model = result_model.copy(True)
         
         self.calculate_bending(res_B, bending_model, area)
         
@@ -212,11 +215,12 @@ class Application:
         return applied_sups, unit_forces
         
     def calculate_bending(self, M, model: Model, area):
-        model.name = "bending_diagram"
+        model.name = "График изгиба"
         
         minW = abs(M).max()/sigma
 
-        I = self.sortament.find_by_Wx(minW)
+        I, beam = self.sortament.find_by_Wx(minW)
+        print("beam: ", beam.name)
         if not I:
             raise Exception("Подходящая балка не найдена по сортаменту")
 
@@ -240,15 +244,18 @@ class Application:
         tab = Tab(model)
         self.active_tab = tab
         self.tabs.update({tab.tab_id:tab})
+        dpg.set_value("tab_bar", self.active_tab.tab_id)
 
     def mouse_wheel_handler(self, sender, app_data, user_data):
         if self.active_tab:
             self.active_tab.factor *= 1.5 ** app_data
             
     # Функция для проверки активного таба
-    def tab_change_callback(self, sender, app_data, user_data):
+    def tab_change_callback(self, sender, app_data, user_data):   
+            
         self.active_tab = self.tabs.get(app_data)
         self.w._build_editable_tree("tree", self.active_tab.model.data)
+        # dpg.set_value("tab_bar", self.active_tab.tab_id)
 
     def key_down_handler(self, sender, app_data, user_data):
             if not self.active_tab:
@@ -269,11 +276,21 @@ class Application:
         return self.active_tab
     
     def update_E(self, sender, app_data, user_data):
-        E = app_data
+        E = int(float(app_data))
+        
+    def save_as_file(self, s, a, u):
+        model = self.active_tab.model.copy(False)
+        model.filename = a.get("file_path_name")
+        model.name = a.get("file_name").split(".")[0]
+        model.save_to_file()
+        self.callbacks.get("create_tab")(model)
         
     def save_file(self):
-        self.active_tab.model.save_to_file()
-        
+        if self.active_tab.model.filename:
+            self.active_tab.model.save_to_file()
+        else:
+            self.w._create_file_dialog(None, None, self.save_as_file)
+            
     def _update_data(self, sender, app_data):
         """Обновление данных при изменении значений"""
         print(sender)

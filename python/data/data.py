@@ -56,4 +56,4 @@ class Sortament:
         for type, channel in self.channels.items():
             for data in channel:
                 if data.Wx > Wx:                    
-                    return data.Ix
+                    return data.Ix, data

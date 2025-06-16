@@ -15,7 +15,7 @@ class Force(Load):
     def make_ctrlPoints(self):
         self.ctrlPoints = []
         self.ctrlPoints.append(Point())
-        self.ctrlPoints.append(Point(self.direction.ort().x, -self.direction.ort().y))
+        self.ctrlPoints.append(Point(*self.direction.ort().asList()))
 
         self.rotation = RotationMatrix(self.direction.angle())
         self.transformation = TranslationMatrix(self.node.direction)

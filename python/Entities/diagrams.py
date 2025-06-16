@@ -33,15 +33,12 @@ class Diagram(Object):
         self.interest_points.append(Point(0, self.diagram[0]/self.factor))
         self.interest_points.append(Point((len(diagram)-1) * float(config("DX")), self.diagram[-1]/self.factor))
 
-
     def geometry(self):
         self.primitives.clear()
         dx = float(config("DX"))
 
         for point in self.interest_points:
-            
-            self.primitives.append(Text(point.asList(), f"{-point.y:.3}", eval(config("TextColor")), 3))
-        
+            self.primitives.append(Text((point).asList(), f"{-point.y*(10 if self.type != 2 else 1):.3}", eval(config("TextColor")), 3))
         for i, val in enumerate(self.diagram):
             if i == len(self.diagram)-1:
                 break

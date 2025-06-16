@@ -23,8 +23,8 @@ from Entities.diagrams import Diagram
 
 
 class Model:
-    def __init__(self):
-        self.readOnly = True
+    def __init__(self, readOnly = True):
+        self.readOnly = readOnly
         self.pos = Point()
         self.scale = 1
         
@@ -111,6 +111,9 @@ class Model:
         self.data.update(data)   
                               
     def save_to_file(self):
+        if self.readOnly:
+            raise Exception("ReadOnly model")
+        
         if self.filename:
             with open(self.filename, "w") as f:
                 print(f"Write model to {self.filename}")
@@ -133,10 +136,9 @@ class Model:
     def get_scale(self):
         return self.scale
     
-    def copy(self):
-        tmp = Model()
+    def copy(self, readOnly):
+        tmp = Model(readOnly)
         tmp.pos = self.pos
-        tmp.filename = self.filename
         tmp.data = deepcopy(self.data)
         tmp.name = self.name
         tmp.dsi = self.dsi

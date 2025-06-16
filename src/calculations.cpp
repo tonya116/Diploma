@@ -47,13 +47,9 @@ extern "C" void diagram_calc(double *x, double xa, double xb, size_t size, doubl
 
   reactions_calc(RA, xa, RB, xb, point_loads, distributed_loads, moments);
 
-
-  std::cout << RA << " " << RB << std::endl;
-
   for (int i = 0; i < size; i++) {
     v = 0;
     m = 0;
-
     if (x[i] >= xa) {
       v += RA;
       m += RA * (x[i] - xa);
@@ -70,15 +66,11 @@ extern "C" void diagram_calc(double *x, double xa, double xb, size_t size, doubl
         m -= f * (x[i] - l);
       }
     }
-
     for (auto &dl : distributed_loads->_matrix) {
-
       double start = dl[0];
       double end = dl[1];
       double force = dl[2];
-
       if (x[i] >= start) {
-
         double x1 = start;
         double x2 = std::min(x[i], end);
         double l = x2 - x1;
@@ -87,7 +79,6 @@ extern "C" void diagram_calc(double *x, double xa, double xb, size_t size, doubl
 
         }
       }
-    
     for (auto &moment : moments->_matrix) {
       double l = moment[0];
       double mom = moment[1];
@@ -95,7 +86,6 @@ extern "C" void diagram_calc(double *x, double xa, double xb, size_t size, doubl
         m += mom;
       }
     }
-
     V[i] = v;
     M[i] = m;
   }
