@@ -1,15 +1,11 @@
 
-import numpy as np
-from Geometry.Vector import Vector
-from Geometry.Point import Point
-from Geometry.Primitives.Arrow import Arrow
-from Geometry.Matrix import TranslationMatrix
-from config import config
 from Entities.node import Node
+from Geometry.Vector import Vector
 from .object import Object
 
+
 class Load(Object):
-    def __init__(self, id: int, node:Node, direction: Vector):
+    def __init__(self, id: int, node: Node, direction: Vector):
         super().__init__(id)
         self.node = node
         self.direction = direction

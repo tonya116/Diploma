@@ -1,14 +1,13 @@
-
+from Geometry.Point import Point
 from Geometry.Primitives.Arrow import Arrow
 from Geometry.Primitives.Circle import Circle
-from Geometry.Primitives.Text import Text
 from Geometry.Primitives.Line import Line
 from Geometry.Primitives.QBezier import QBezier
+from Geometry.Primitives.Text import Text
+from Geometry.Vector import Vector
 from config import config
 from dearpygui import dearpygui as dpg
 from model import Model
-from Geometry.Vector import Vector
-from Geometry.Point import Point
 
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
@@ -25,10 +24,10 @@ class Tab:
         s = self.model.get_nodes()[0]
         e = self.model.get_nodes()[-1]
         d = e.direction - s.direction
-        
+
         self.order = ["supports", "elements", "nodes", "loads"]
 
-        self.model.set_pos(Vector(W//4 - d.norm()/2*self.factor, H//2))
+        self.model.set_pos(Vector(W // 4 - d.norm() / 2 * self.factor, H // 2))
         # Создаем вкладку и все дочерние элементы
         with dpg.tab(label=self.model.name, parent="tab_bar", closable=True) as self.tab_id:
             with dpg.drawlist(width=W, height=H, parent=self.tab_id) as self.drawlist_id:
@@ -36,7 +35,8 @@ class Tab:
                     with dpg.draw_node(parent=self.draw_layer_id) as self.draw_node_id:
                         self.draw_model()
 
-    def f(self, s, a, u):
+    @staticmethod
+    def f(s, a, u):
         print(s, a, u)
 
     def update_model(self):
@@ -44,46 +44,56 @@ class Tab:
 
         self.model.update()
 
-        dpg.apply_transform(
-            self.draw_node_id, self.model.model_matrix
-        )
+        dpg.apply_transform(self.draw_node_id, self.model.model_matrix)
 
     def draw_model(self):
 
         if not self.model:
             return
-        
+
         # Очищаем предыдущие элементы
         self.clear_model()
         self.model.set_scale(self.factor)
         self.update_model()
-        
+
         for _, val in self.model.data.items():
             for obj in val:
                 self.draw_grid(obj.apply_transformation(obj.interest_points))
-                    
+
         for obj in self.model.diagrams:
             self.draw_grid(obj.apply_transformation(obj.interest_points))
-        
+
         for element in self.order:
             for obj in self.model.data.get(element):
                 for prim in obj.geometry():
                     self.draw(prim)
-    
+
         for obj in self.model.diagrams:
             for prim in obj.geometry():
                 self.draw(prim)
-                    
+
     def clear_model(self):
         """Удаляет все графические элементы модели"""
         if dpg.does_item_exist(self.draw_node_id):
             dpg.delete_item(self.draw_node_id, children_only=True)
 
     def draw_grid(self, interest_points: list[Point]):
-        
+
         for point in interest_points:
-            self.grid.append(Line(Point(point.x, self.far).asList(), Point(point.x, -self.far).asList(), eval(config("GridColor")), 1))
-            self.grid.append(Line(Point(self.far, point.y).asList(), Point(-self.far, point.y).asList(), eval(config("GridColor")), 1))
+            self.grid.append(
+                Line(
+                    Point(point.x, self.far).asList(),
+                    Point(point.x, -self.far).asList(),
+                    eval(config("GridColor")),
+                    1,
+            ))
+            self.grid.append(
+                Line(
+                    Point(self.far, point.y).asList(),
+                    Point(-self.far, point.y).asList(),
+                    eval(config("GridColor")),
+                    1,
+            ))
 
         for prim in set(self.grid):
             self.draw(prim)
@@ -96,7 +106,7 @@ class Tab:
                 color=primitive.color,
                 thickness=primitive.thickness,
                 parent=self.draw_node_id,
-                size=0.5
+                size=0.5,
             )
         elif isinstance(primitive, Circle):
             dpg.draw_circle(

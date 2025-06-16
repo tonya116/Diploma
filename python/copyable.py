@@ -1,7 +1,7 @@
-
 import copy
 
-class Copyable:    
+
+class Copyable:
     def __deepcopy__(self, memo):
         # Создаём новый экземпляр того же класса
         cls = self.__class__
@@ -10,5 +10,5 @@ class Copyable:
         # Копируем все атрибуты
         for k, v in self.__dict__.items():
             setattr(result, k, copy.deepcopy(v, memo))
-            
+
         return result

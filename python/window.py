@@ -4,7 +4,6 @@ from dearpygui import dearpygui as dpg
 from model import Model
 
 from config import config
-from Geometry.Vector import Vector
 from Entities.node import Node
 from Entities.element import Element
 from Entities.fixed import Fixed
@@ -17,12 +16,8 @@ from Entities.load import Load
 from Entities.distributed_force import DistributedForce
 from Entities.momentum import Momentum
 
-from Geometry.Point import Point
-from tab import Tab
-
 W = int(config("WIDTH"))
 H = int(config("HEIGHT"))
-
 
 TITLE = "HyprBeam"
 
@@ -41,27 +36,7 @@ class Window:
                 dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
         dpg.bind_font(default_font)
 
-            
-        # # Регистрируем шрифт
-        # with dpg.font_registry():
-        #     # Первый параметр - размер, второй - путь к файлу шрифта
-        #     default_font = dpg.add_font(config("FONT"), int(config("FONT_SIZE")), tag="rus_font")
-        #     # Устанавливаем шрифт по умолчанию для всех элементов
-        #     dpg.bind_font(default_font)
-
         self.setup()
-
-    def mouse_drag_handler(self, sender, app_data, user_data):
-        if self.app.active_tab:
-            f = Vector(*dpg.get_mouse_pos()) 
-            current_pos = self.active_tab.model.get_pos()
-            # self.app.current_model.set_pos(f + (f - current_pos))
-
-    # def mouse_double_click_handler(self, sender, app_data, user_data):
-    #     if self.app.active_tab and app_data == dpg.mvMouseButton_Left:
-    #         mouse_pos = Vector(*dpg.get_drawing_mouse_pos()) - Vector(W//4, H//2)
-    #         print(f"Mouse position: {mouse_pos}")
-    #         dpg.draw_circle(mouse_pos.asList(), 5, color=(255, 255, 0), fill=(255, 255, 0), parent=self.app.active_tab.model.draw_node_id)
 
     def select_open_file_cb(self, sender, app_data, user_data):
         model = Model(False)
@@ -218,7 +193,6 @@ class Window:
                     dpg.add_menu_item(label="Запуск", callback=self.callbacks.get("calculate"))
                     
             with dpg.group(horizontal=True):
-     
 
                 # Левый блок — Канвас
                 with dpg.child_window(width=W//4*3-190, height=H, no_scroll_with_mouse=True):
@@ -227,7 +201,6 @@ class Window:
                         pass          
                                   
                 # Правый блок — Инспектор
-                # Inspector()
                 with dpg.child_window(width=W//4+150, height=H, tag="inspector"):
                     dpg.add_text("Инспектор")
                     
@@ -241,12 +214,8 @@ class Window:
                     
         
         with dpg.handler_registry():
-            # dpg.add_item_clicked_handler(button=dpg.mvMouseButton_Middle, callback=self.callback)
             dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Middle, callback=self.callbacks.get("tab_change_callback"))
-            # dpg.add_mouse_double_click_handler(callback=self.mouse_double_click_handler)
-            # dpg.add_mouse_drag_handler(callback=self.mouse_drag_handler, button=dpg.mvMouseButton_Left)
             dpg.add_mouse_wheel_handler(callback=self.callbacks.get("mouse_wheel_handler"))
-            # dpg.add_key_down_handler(callback=self.callbacks.get("key_down_handler"))
-            # dpg.add_key_press_handler(callback=self.callbacks.get("key_down_handler"))
+
         dpg.set_primary_window("main_window", True)
         

@@ -1,14 +1,15 @@
 ﻿
-from Geometry.Vector import Vector
+from Entities.node import Node
+from Geometry.Matrix import RotationMatrix, ScaleMatrix, TranslationMatrix
 from Geometry.Point import Point
 from Geometry.Primitives.Arrow import Arrow
-from Geometry.Matrix import RotationMatrix, ScaleMatrix, TranslationMatrix
+from Geometry.Vector import Vector
 from config import config
-from Entities.node import Node
 from .load import Load
 
+
 class Force(Load):
-    def __init__(self, id: int, node:Node, direction: Vector):
+    def __init__(self, id: int, node: Node, direction: Vector):
         super().__init__(id, node, direction)
         self.make_ctrlPoints()
 
@@ -20,7 +21,7 @@ class Force(Load):
         self.rotation = RotationMatrix(self.direction.angle())
         self.transformation = TranslationMatrix(self.node.direction)
         self.scale = ScaleMatrix()
-        
+
         self.ctrlPoints = self.apply_transformation(self.ctrlPoints)
 
     def __str__(self):
@@ -29,9 +30,20 @@ class Force(Load):
     def geometry(self):
         self.primitives.clear()
 
-        self.primitives.append(Arrow(self.ctrlPoints[0].asList(), self.ctrlPoints[1].asList(), eval(config("ForceColor")), 5))
+        self.primitives.append(
+            Arrow(
+                self.ctrlPoints[0].asList(),
+                self.ctrlPoints[1].asList(),
+                eval(config("ForceColor")),
+                5,
+        ))
 
         return self.primitives
-    
+
     def serialize(self):
-        return {"id": self.id, "node": self.node.id, "type": "force", "direction": self.direction.serialize()}
+        return {
+            "id": self.id,
+            "node": self.node.id,
+            "type": "force",
+            "direction": self.direction.serialize(),
+        }

@@ -1,7 +1,7 @@
 ﻿#include "../include/matrix.h"
 #include <cstddef>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <vector>
 
 Matrix::Matrix(std::initializer_list<std::initializer_list<double>> init) {
@@ -23,16 +23,13 @@ Matrix::Matrix(double **data, size_t rows, size_t cols) {
   }
 }
 
-Matrix::Matrix()
- :_n(0)
- ,_m(0)
- {
+Matrix::Matrix() : _n(0), _m(0) {
   _matrix.reserve(1);
   for (int i = 0; i < 1; ++i)
     _matrix.emplace_back(std::vector<double>(1, -1));
 }
 
-Matrix::Matrix(Matrix& other) {
+Matrix::Matrix(Matrix &other) {
   _n = other._n;
   _m = other._m;
   _det = other._det;
@@ -57,44 +54,44 @@ void Matrix::setIdentityMatrix() {
 
 void Matrix::logMatrix() {
 
-    int cellWidth = 10; // Ширина одной ячейки
+  int cellWidth = 10; // Ширина одной ячейки
 
-    // Функция для создания границы
-    auto printBorder = [&]() {
-        std::cout << "+";
-        for (size_t i = 0; i < _m; ++i) {
-            std::cout << std::string(cellWidth, '-') << "+";
-        }
-        std::cout << std::endl;
-    };
-
-    // Вывод верхней границы
-    printBorder();
-
-    // Вывод строк матрицы
-    for (const auto& row : _matrix) {
-        std::cout << "|";
-        for (double item : row) {
-            std::cout << std::setw(cellWidth) << item << "|";
-        }
-        std::cout << std::endl;
-
-        // Вывод границы после каждой строки
-        printBorder();
+  // Функция для создания границы
+  auto printBorder = [&]() {
+    std::cout << "+";
+    for (size_t i = 0; i < _m; ++i) {
+      std::cout << std::string(cellWidth, '-') << "+";
     }
+    std::cout << std::endl;
+  };
 
+  // Вывод верхней границы
+  printBorder();
+
+  // Вывод строк матрицы
+  for (const auto &row : _matrix) {
+    std::cout << "|";
+    for (double item : row) {
+      std::cout << std::setw(cellWidth) << item << "|";
+    }
+    std::cout << std::endl;
+
+    // Вывод границы после каждой строки
+    printBorder();
+  }
 }
 
-bool Matrix::dimEqual(Matrix other){
+bool Matrix::dimEqual(Matrix other) {
   return (other._m == _m && other._n == _n);
 }
 
-void Matrix::transpose(){
-  
-  if (_n == 1 && _m == 1) return;
+void Matrix::transpose() {
 
-  for(int i = 0; i < _n; i++){
-    for(int j = 0; j < i; j++){
+  if (_n == 1 && _m == 1)
+    return;
+
+  for (int i = 0; i < _n; i++) {
+    for (int j = 0; j < i; j++) {
       std::swap(_matrix[i][j], _matrix[j][i]);
     }
   }
@@ -106,7 +103,7 @@ Matrix Matrix::minor(int r, int c) {
     return Matrix{{_matrix[0][0]}};
   }
 
-  Matrix temp(_n-1, _m-1 );
+  Matrix temp(_n - 1, _m - 1);
   int a = 0;
   int b = 0;
   for (int i = 0; i < _m; i++) {
@@ -123,45 +120,45 @@ Matrix Matrix::minor(int r, int c) {
   }
   temp.logMatrix();
   return temp;
-
 }
 
-void Matrix::determinant(){
-  if (!std::isnan(_det)){
+void Matrix::determinant() {
+  if (!std::isnan(_det)) {
     return;
   }
-  if(_m != _n){
+  if (_m != _n) {
     std::runtime_error("Cannot calculate det for non square matrix");
   }
 
   switch (_n) {
-    case 0:
-      _det = 0.;
-      break;
-    case 1:
-      _det = _matrix[0][0];
-      break;
-    case 2:
-      _det = _matrix[0][0] * _matrix[1][1] - _matrix[1][0] * _matrix[0][1];
-      break;
-    default:
-      double det = 0;
-      for(int i = 0; i < _m; i++){
-        det += _matrix[0][i] * std::pow(-1, i) * minor(0, i).getDeterminant();
-      }
-      _det = det;
+  case 0:
+    _det = 0.;
+    break;
+  case 1:
+    _det = _matrix[0][0];
+    break;
+  case 2:
+    _det = _matrix[0][0] * _matrix[1][1] - _matrix[1][0] * _matrix[0][1];
+    break;
+  default:
+    double det = 0;
+    for (int i = 0; i < _m; i++) {
+      det += _matrix[0][i] * std::pow(-1, i) * minor(0, i).getDeterminant();
+    }
+    _det = det;
   }
 }
 
-void Matrix::inverse(){
+void Matrix::inverse() {
 
-  if (_n == 1){
-     _matrix[0][0] = 1/_matrix[0][0];
-     return;
+  if (_n == 1) {
+    _matrix[0][0] = 1 / _matrix[0][0];
+    return;
   }
 
   if (_m != _n) {
-    std::runtime_error give_me_a_name("Cannot inverse matrix with wrong dimentions");
+    std::runtime_error give_me_a_name(
+        "Cannot inverse matrix with wrong dimentions");
     return;
   }
 
@@ -173,27 +170,27 @@ void Matrix::inverse(){
   }
 
   Matrix minors(_n, _m);
-  for(int i = 0; i < _n; i++){
-    for(int j = 0; j < _m; j++){
-      minors[i][j] = pow(-1, i+j) * minor(i, j).getDeterminant();
+  for (int i = 0; i < _n; i++) {
+    for (int j = 0; j < _m; j++) {
+      minors[i][j] = pow(-1, i + j) * minor(i, j).getDeterminant();
     }
   }
 
-  *this = minors.getTranspose() * (1/_det);
+  *this = minors.getTranspose() * (1 / _det);
 }
 
-double Matrix::getDeterminant(){
+double Matrix::getDeterminant() {
   determinant();
   return _det;
 }
 
-Matrix Matrix::getInverse(){
+Matrix Matrix::getInverse() {
   auto tmp = Matrix(*this);
   tmp.inverse();
   return tmp;
 }
 
-Matrix Matrix::getTranspose(){
+Matrix Matrix::getTranspose() {
   auto tmp = Matrix(*this);
   tmp.transpose();
   return tmp;
@@ -202,7 +199,8 @@ Matrix Matrix::getTranspose(){
 Matrix Matrix::operator*(Matrix other) {
 
   if (_m != other._n) {
-    std::runtime_error give_me_a_name("Cannot multply matrix with wrong dimentions");
+    std::runtime_error give_me_a_name(
+        "Cannot multply matrix with wrong dimentions");
     return Matrix();
   }
 
@@ -220,14 +218,13 @@ Matrix Matrix::operator*(Matrix other) {
   return resultMatrix;
 }
 
-
-Matrix* Matrix::operator*(Matrix* other) {
+Matrix *Matrix::operator*(Matrix *other) {
 
   if (_m != other->_n) {
     std::runtime_error("Cannot multply matrix with wrong dimentions");
   }
 
-  Matrix* resultMatrix = new Matrix(_n, other->_m);
+  Matrix *resultMatrix = new Matrix(_n, other->_m);
   double sum = 0;
   for (int i = 0; i < _n; i++) {
     for (int j = 0; j < other->_m; j++) {
@@ -251,11 +248,7 @@ Matrix Matrix::operator*(double scalar) {
   return resultMatrix;
 }
 
-void Matrix::operator*=(Matrix other) {
-  
-  *this = *this * other;
-}
-
+void Matrix::operator*=(Matrix other) { *this = *this * other; }
 
 void Matrix::operator*=(double scalar) {
   Matrix resultMatrix(_n, _m);
@@ -266,7 +259,6 @@ void Matrix::operator*=(double scalar) {
   }
   *this = resultMatrix;
 }
-
 
 Matrix Matrix::operator+(Matrix other) {
 
@@ -285,16 +277,10 @@ Matrix Matrix::operator+(Matrix other) {
 
 std::vector<double> &Matrix::operator[](int index) { return _matrix[index]; }
 
-void Matrix::operator+=(Matrix other) {
-  *this = *this + other;
-}
+void Matrix::operator+=(Matrix other) { *this = *this + other; }
 
 void Matrix::set(int row, int col, double value) { _matrix[row][col] = value; }
 double Matrix::get(int row, int col) const { return _matrix[row][col]; }
 
-int Matrix::getRows() const {
-  return _n;
-}
-int Matrix::getCols() const {
-  return _m;
-}
+int Matrix::getRows() const { return _n; }
+int Matrix::getCols() const { return _m; }
